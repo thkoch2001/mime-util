@@ -116,4 +116,5 @@ As you can see the extension is defined using the syntax string>bufsize<. It can
 means match this within bufsize character from the position defined at the begining of the line. 
 
 
+The extended mime-types.properties and magic.mime files we use can be located in the conf directory of this distribution.
 The MimeUtil class
