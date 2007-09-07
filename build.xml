@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 
+  Copyright 2007 Medsea Business Solutions S.L.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+-->
+
+<project name="MimeUtil" default="default" basedir=".">
+
+<description>Mime Type Utility.</description>
+
+	<!-- Module name -->
+	<property name="module.name" value="mime-util"/>
+	
+
+	<!-- Loads environment variables as properties -->
+	<property environment="env"/>
+	
+	<!-- Directory mapping -->
+	<property name="root.dir" location="${basedir}"/>
+	
+	<property name="src.dir" location="src"/>
+	<property name="build.dir" location="build"/>
+	<property name="dist.dir" location="dist"/>
+	<property name="test.dir" location="test"/>
+	<property name="lib.dir" location="lib"/>
+	<property name="docs.dir" location="docs"/>
+	
+	<property name="build.classes.dir" location="${build.dir}/classes"/>
+	<property name="build.test.classes.dir" location="${build.classes.dir}/test"/>
+	
+	<property name="javadocs.dir" location="${docs.dir}/javadocs"/>
+	
+	<property name="test.src.dir" location="${test.dir}/src"/>
+	<property name="test.data.dir" location="${test.dir}/data"/>
+	<property name="test.reports.dir" location="${docs.dir}/testreports"/>
+	
+	<!-- User's properties -->
+	<property file="build.properties"/>
+
+	<!--  names of targets -->
+	<property name="jar_file" value="mime-util.jar" />
+
+	<!-- Initializes the working directories -->
+	<target name="do-init">
+		<tstamp/>
+		<mkdir dir="${build.classes.dir}"/>
+		<mkdir dir="${dist.dir}"/>
+	</target>
+
+	<!-- Clean build environment -->
+	<target name="do-clean">
+		<delete dir="${build.dir}"/>
+		<delete dir="${dist.dir}"/>
+	</target>
+
+	<!-- Compile the sources -->
+	<target name="do-compile" depends="do-init">
+		<javac 	srcdir="${src.dir}"
+			destdir="${build.classes.dir}"
+			debug="${javac.debug}"
+			verbose="${javac.verbose}"
+			deprecation="${javac.deprecation}">
+			<include name="**/*.java"/>
+		</javac>
+	</target>
+	
+	<target name="create-jar" depends="do-compile">
+		<jar destfile="${dist.dir}/${jar_file}">
+			<fileset dir="${build.classes.dir}">
+				<include name="**/*.class"/>
+			</fileset>
+			<fileset dir="${src.dir}">
+				<include name="**/*.properties"/>
+				<include name="**/magic.mime"/>
+			</fileset>
+		</jar>
+	</target>
+	
+	<!-- Default target -->
+	<target name="default" description="Default target." depends="all"/>
+
+	<!-- Clean ANT working directories -->
+	<target name="clean" depends="do-clean" description="Clean ANT working directories."/>
+
+	<!-- Generates distribution files. -->
+	<target name="dist" depends="create-jar" description="Generates distribution files."/>
+
+	<!-- Clean, build, deploy, test, docs the module. -->
+	<target name="all" description="Clean, build the module." depends="clean, dist"/>
+
+</project>
