@@ -1,5 +1,7 @@
 This is being released under the Apache Licence V2.
 
+The latest version can always be retrieved from the SVN repository....
+
 
 MimeUtil Mime Type Detection
 
