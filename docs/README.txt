@@ -22,16 +22,17 @@ to do with this type of information.
 
 Mostly mime types for files can be assumed based on their file extension such as files ending in .jar are assigned the mime type 
 application/java-archive but some files do not have extensions and this association is then not possible. In these cases an 
-alternative to mime type association by file extension is needed. Luckily within the Unix world file type detection using magic 
+alternative to mime type association by file extension is needed. Luckily within the Unix world, file type detection using magic 
 numbers has been around for quite some time, even before the internet. This technique peaks inside files to known offsets and 
 compares values. It does this based on a set of rules contained in a file called magic located on the Unix system. 
 The Unix file command uses this file, or a compiled version of it, to determine information about the file. It recursively passes 
-the file through the rules defined in the magic file until a match is found. However, the magic file itself does not contain mime type 
+the file through the rules defined in the magic file until a match is found, or not. However, the magic file itself does not contain mime type 
 information so Unix again comes to the rescue with an alternative file called magic.mime which has the exact same rule set as the 
 magic file but can guess the mime types of the files based on the magic rule set. The downside of this detection method is that 
 its much slower than association by file extension. Mime type detection is not guaranteed to be accurate. It is a best guess 
 approach where speed should be of greater consideration than accuracy. So this mime utility uses the two techniques described 
-above and in the order described. 
+above and in the order described (unless you specifically only want to detect by file sniffing even if extension matching would work see NOTE 1 
+at the end of this document for more detail). 
 
 Firstly it will get a files extension (if it has one) and check this against a list of registered extensions within the MimeUtil class. 
 If it finds a match for this extension it will return this value. Obviously the mime utility must have a list of mappings between 
@@ -118,3 +119,10 @@ means match this within bufsize character from the position defined at the begin
 
 The extended mime-types.properties and magic.mime files we use can be located in the conf directory of this distribution.
 The MimeUtil class
+
+
+NOTE 1. You can force the mome utility to only use the magic.mime file rules defined above by calling the 
+MimeUtil.getMimeType(File file, boolean force) {...} method and passing false as the force value. There is a convenience wrapper method 
+that does this for you MimeUtil.getMimeType(File file) {...}. If you also want to use the extension mapping feature then call this method
+passing true as the force parameter. This then uses the canonical file name of the file object and first tries to match the extension 
+and if that fails it will then use file sniffing using the magic.mime file rules described above.
