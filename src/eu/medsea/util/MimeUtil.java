@@ -34,9 +34,19 @@ public class MimeUtil {
 	
 	// Always use the magic.mime detection. Do not use the file extension
 	public static String getMimeType(File file) {
+		return getMimeType(file, false);
+	}
+	
+	// If force is set to true then we will try to use both matching from file extension
+	// and then from the magic.mime if that fails. Else we just match from the magic.mime
+	public static String getMimeType(File file, boolean force) {
 		String mimeType = null;
 		try {
-			mimeType = MimeUtil.getMagicMimeType(file);
+			if(force) {
+				mimeType = MimeUtil.getMimeType(file.getCanonicalPath());
+			} else {
+				mimeType = MimeUtil.getMagicMimeType(file);
+			}
 		}catch(Exception e) {
 		}finally {
 			if(mimeType == null) {
@@ -46,8 +56,8 @@ public class MimeUtil {
 		return mimeType;
 	}
 
-	// Determin the mime type of a file either from its name using
-	// file extension mapping and if that fails use the magig.mime rules.
+	// Determine the mime type of a file either from its name using
+	// file extension mapping and if that fails use the magic.mime rules.
 	// This requires that the name you pass is the FULL path to the file
 	// You are trying to detect or the magic.mime rule detection will fail
 	// as it will be unable to construct a File object without the path.
@@ -145,7 +155,7 @@ public class MimeUtil {
 					}
 				} 
 			} else {
-				System.out.println("No Customisation or Mime Types available.");
+				System.out.println("No Customisations of Mime Types available.");
 			}
 		} catch (IOException ignore) {}
 
@@ -172,8 +182,6 @@ public class MimeUtil {
 		}
 		
 		// Parse the UNIX magic(5) magic.mime file. 
-		// This is used should the mime type not be decernable from the extension 
-		// i.e. the file has no extension
 		try {
 			boolean found = false;
 			for(int i = 0; i< magicMimeFileLocations.length; i++) {
@@ -204,25 +212,18 @@ public class MimeUtil {
 	public static void main(String [] args) throws IOException {
 		System.out.println(mMagicMimeEntries);
 		
-		File dir = new File(".");
+		File dir = null;
+		if(args.length == 0) {
+			dir = new File(".");
+		} else {
+			dir = new File(args[0]);
+		}
 		File [] f = dir.listFiles();
 		for(int i = 0; i < f.length; i++) {
-			System.out.println("file : " + f[i].getCanonicalPath() + " : mimeType : " + MimeUtil.getMimeType(f[i].getCanonicalPath()));
-		}
-		
-		
-		System.out.println(MimeUtil.getMajorComponent("application/abcd"));
-		System.out.println(MimeUtil.getMajorComponent("application"));
-		System.out.println(MimeUtil.getMajorComponent("/application/abcd"));
-		System.out.println(MimeUtil.getMajorComponent(""));
-		System.out.println(MimeUtil.getMajorComponent(null));
-		
-		System.out.println(MimeUtil.getMinorComponent("application/abcd"));
-		System.out.println(MimeUtil.getMinorComponent("application"));
-		System.out.println(MimeUtil.getMinorComponent("/application/abcd"));
-		System.out.println(MimeUtil.getMinorComponent(""));
-		System.out.println(MimeUtil.getMinorComponent(null));
-		
+			System.out.println("(Using name) file : " + f[i].getCanonicalPath() + " : mimeType : " + MimeUtil.getMimeType(f[i].getCanonicalPath()));
+			System.out.println("(Using file) file : " + f[i].getCanonicalPath() + " : mimeType : " + MimeUtil.getMimeType(f[i]));
+			System.out.println("-----------------------");
+		}		
 	}
 	
 	// Parse the magic.mime file
@@ -284,13 +285,22 @@ public class MimeUtil {
     		return "application/directory";
     	}
         int len = mMagicMimeEntries.size();
-        RandomAccessFile raf = new RandomAccessFile(f, "r");
-        for (int i=0; i < len; i++) {
-            MagicMimeEntry me = (MagicMimeEntry) mMagicMimeEntries.get(i);
-            String mtype = me.getMatch(raf);
-            if (mtype != null) {
-                return mtype;
-            }
+        RandomAccessFile raf = null;
+        try {
+	        raf = new RandomAccessFile(f, "r");
+	        for (int i=0; i < len; i++) {
+	            MagicMimeEntry me = (MagicMimeEntry) mMagicMimeEntries.get(i);
+	            String mtype = me.getMatch(raf);
+	            if (mtype != null) {
+	                return mtype;
+	            }
+	        }
+        } finally {
+        	if(raf != null) {
+        		try {
+        			raf.close();
+        		}catch(Exception ignore) {}
+        	}
         }
         return null;
     }
