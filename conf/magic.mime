@@ -26,11 +26,10 @@
 0		string		\211PNG\r\n\032\n		image/png
 
 #SVG Image Format
-#	We know its an XML file so it should start with an XML declaration.
-0	string	\<?xml\ version=	text/xml
 #	As the XML declaration in an XML file can be short or extended we cannot know
 #	exactly where the declaration ends i.e. how long it is, 
 #	also it could be terminated with by new line(s) or a space(s). 
-#	So the next line states that somewhere after the 15th caracter position we should find the DOCTYPE declaration.
-#	This DOCTYPE declaration should be within 1024 characters from the 15th character 
->15	string>1024<	\<!DOCTYPE\ svg\ PUBLIC\ "-//W3C//DTD\ SVG 	image/svg+xml
+#	So the next line states that somewhere within the first 1K block of characters we 
+#	should find the DOCTYPE declaration for the SVG.
+#	This DOCTYPE declaration should be within 1024 characters from the beginning of the file. 
+0	string>1024<	\<!DOCTYPE\ svg\ PUBLIC\ "-//W3C//DTD\ SVG 	image/svg+xml
