@@ -1,4 +1,7 @@
 package eu.medsea.util;
+
+import java.util.List;
+
 /**
  * Copyright 2005 The Apache Software Foundation
  *
@@ -14,12 +17,6 @@ package eu.medsea.util;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import java.util.ArrayList;
-
-/*
- */
-
 public class InvalidMagicMimeEntryException extends Exception {
 
 	private static final long serialVersionUID = -6705937358834408523L;
@@ -27,8 +24,17 @@ public class InvalidMagicMimeEntryException extends Exception {
 	public InvalidMagicMimeEntryException() {
         super("Invalid Magic Mime Entry: Unknown entry");
     }
-    
-    public InvalidMagicMimeEntryException(ArrayList mimeMagicEntry) {
+
+	public InvalidMagicMimeEntryException(Throwable cause) {
+        this();
+        initCause(cause);
+    }
+
+    public InvalidMagicMimeEntryException(List mimeMagicEntry) {
     	super("Invalid Magic Mime Entry: " + mimeMagicEntry.toString());
+    }
+    public InvalidMagicMimeEntryException(List mimeMagicEntry, Throwable cause) {
+    	this(mimeMagicEntry);
+    	initCause(cause);
     }
 }
