@@ -2,8 +2,7 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="C:/Documents and Settings/Owner/.m2/repository/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1.jar"/>
-	<classpathentry kind="lib" path="C:/Documents and Settings/Owner/.m2/repository/log4j/log4j/1.2.9/log4j-1.2.9.jar"/>
-	<classpathentry kind="lib" path="C:/Documents and Settings/Owner/.m2/repository/junit/junit/3.8.2/junit-3.8.2.jar"/>
+	<classpathentry kind="lib" path="lib/commons-logging-1.1.1.jar"/>
+	<classpathentry kind="lib" path="lib/junit-3.8.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

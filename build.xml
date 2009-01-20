@@ -17,7 +17,7 @@
 
 -->
 
-<project name="MimeUtil" default="default" basedir=".">
+<project name="MimeUtil" default="create-jar" basedir=".">
 
 <description>Mime Type Utility.</description>
 
@@ -49,9 +49,31 @@
 	
 	<!-- User's properties -->
 	<property file="build.properties"/>
+	<property file="lib.properties"/>
 
 	<!--  names of targets -->
 	<property name="jar_file" value="mime-util.jar" />
+	
+	<!-- retrieve all required libs -->
+	<target name="download-lib" depends="do-init">
+		<jarlib-resolve property="${dependency.log4j.library}" failOnError="true" checkExtension="false">
+			<extension extensionName="${dependency.log4j.name}" />
+			<location location="${dependency.log4j.location}" />
+			<url url="${dependency.log4j.url}" destfile="${dependency.log4j.location}" />
+		</jarlib-resolve>
+
+		<jarlib-resolve property="${dependency.commons-logging.library}" failOnError="true" checkExtension="false">
+			<extension extensionName="${dependency.commons-logging.name}" />
+			<location location="${dependency.commons-logging.location}" />
+			<url url="${dependency.commons-logging.url}" destfile="${dependency.commons-logging.location}" />
+		</jarlib-resolve>
+
+		<jarlib-resolve property="${dependency.junit.library}" failOnError="true" checkExtension="false">
+			<extension extensionName="${dependency.junit.name}" />
+			<location location="${dependency.junit.location}" />
+			<url url="${dependency.junit.url}" destfile="${dependency.junit.location}" />
+		</jarlib-resolve>
+	</target>
 
 	<!-- Initializes the working directories -->
 	<target name="do-init">
@@ -67,8 +89,14 @@
 	</target>
 
 	<!-- Compile the sources -->
-	<target name="do-compile" depends="do-init">
-		<javac 	srcdir="${src.dir}"
+	<target name="do-compile" depends="download-lib">
+		<path id="javac.classpath">
+		      <pathelement path="${project.path}" />
+		      <pathelement path="${java.class.path}" />
+		      <fileset dir="${lib.dir}" includes="**/*" />
+		 </path>
+		
+		<javac classpathref="javac.classpath" srcdir="${src.dir}"
 			destdir="${build.classes.dir}"
 			debug="${javac.debug}"
 			verbose="${javac.verbose}"
