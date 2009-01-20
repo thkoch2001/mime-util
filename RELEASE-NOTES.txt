@@ -1,0 +1,55 @@
+/*
+ * Copyright 2007-2009 Medsea Business Solutions S.L.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+ What is mime-util?
+ It's a very small lightweight extensible utility that allows Java programs to detect mime types based on file extensions and magic numbers.
+ The API supports java.io.File and java.io.InputStream. It reads the system's magic files as used by the Unix file(1) command when used on a Unix OS.
+ For Windows, internal resources are included in the library.
+
+ For a fuller description of mime-util please refer to the README.txt file distributed with the library.
+
+ This file contains the release notes of each version of mime-util
+
+ Version 1.0 Released 07-09-2007
+
+ 1. Initial implementation of the mime detection utility library
+
+
+ Version 1.1 Released 21-01-2009
+
+ 1. Fixed all issues arising from version 1.0
+ 2. Added extensive javadoc
+ 3. Added many new features and methods
+ 4. Improved the parsing of the unix file(1) magic.mime files
+ 6. Extended the customisation features for both magic.mime files and file extension mappings
+ 7. Improved the build process
+ 8. Added many unit tests (these can be downloaded separately from the SVN repository)
+ 9. Improved the README documentation
+ 10. Improved the speed for identifying mime types
+ 11. Added the ability to detect the mime type of a stream
+
+
+We are now actively working on version 2.0 which will include many new features including:
+Deployable as an OSGI bundle
+Packaged as a maven 2 project
+Plugins for Eclipse and Freedesktop
+
+Plus may more new features....
+
+
+We hope you enjoy this project as much as we enjoy developing it, Please feel free to register any
+feature requests or bugs on the SourceForge project site http://sourceforge.net/projects/mime-util/
+

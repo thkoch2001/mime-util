@@ -127,7 +127,7 @@
 	<!-- Create a zip file containing the source -->
 	<target name="create-src-zip" description="Create the source zip file">
 		<zip destfile="${dist.dir}/${src_file}" basedir="${root.dir}" update="true"
-			includes="src/**/*.java, src/**/*.properties, src/**/magic.mime, build.xml, build.properties, lib.properties"
+			includes="src/**/*.java, src/**/*.properties, src/**/magic.mime, build.xml, build.properties, lib.propertiesm *.txt"
 			excludes="src/**/test/**">
 		</zip>
 	</target>
@@ -160,6 +160,7 @@
 	<target name="copy-files">
 		<copy file="${root.dir}/README.txt" todir="${dist.dir}"/>
 		<copy file="${root.dir}/LICENSE.txt" todir="${dist.dir}"/>
+		<copy file="${root.dir}/RELEASE-NOTES.txt" todir="${dist.dir}"/>
 	</target>
 
 	<!-- Default target -->
