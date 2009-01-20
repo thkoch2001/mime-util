@@ -1,9 +1,5 @@
-package eu.medsea.util;
-
-import java.util.List;
-
-/**
- * Copyright 2005 The Apache Software Foundation
+/*
+ * Copyright 2007-2008 Medsea Business Solutions S.L.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +13,15 @@ import java.util.List;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-public class InvalidMagicMimeEntryException extends Exception {
+package eu.medsea.util;
+
+import java.util.List;
+
+/**
+ * This exception is thrown if while parsing the magic.mime files an invalid un-parsable entry is found
+ * @author Steven McArdle
+ */
+class InvalidMagicMimeEntryException extends RuntimeException {
 
 	private static final long serialVersionUID = -6705937358834408523L;
 
@@ -25,16 +29,19 @@ public class InvalidMagicMimeEntryException extends Exception {
         super("Invalid Magic Mime Entry: Unknown entry");
     }
 
-	public InvalidMagicMimeEntryException(Throwable cause) {
-        this();
-        initCause(cause);
-    }
-
     public InvalidMagicMimeEntryException(List mimeMagicEntry) {
     	super("Invalid Magic Mime Entry: " + mimeMagicEntry.toString());
     }
-    public InvalidMagicMimeEntryException(List mimeMagicEntry, Throwable cause) {
-    	this(mimeMagicEntry);
-    	initCause(cause);
+
+    public InvalidMagicMimeEntryException(List mimeMagicEntry, Throwable t) {
+    	super("Invalid Magic Mime Entry: " + mimeMagicEntry.toString(), t);
+    }
+
+    public InvalidMagicMimeEntryException(Throwable t) {
+    	super(t);
+    }
+
+    public InvalidMagicMimeEntryException(String message, Throwable t) {
+    	super(message, t);
     }
 }

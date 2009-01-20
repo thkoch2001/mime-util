@@ -1,5 +1,5 @@
-/**
- * Copyright 2005 The Apache Software Foundation
+/*
+ * Copyright 2007-2009 Medsea Business Solutions S.L.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,30 +27,27 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
-import eu.medsea.util.log.Logger;
-
-
-/*
- * A single MagicMime entry from the magic.mime file. This entry can contain
- * subentries; so it recursivelyincludes itself, if subentries are found.
- * Basically this class represents a node in a simple n-ary tree
+/**
+ * A single MagicMime entry from a magic.mime file. This entry can contain
+ * sub-entries; so it recursively includes itself, if sub-entries are found.
+ * Basically this class represents a node in a simple n-array tree
  *
  * TODO:
- *  o   More commenting
- *  o   Testing lelong, leshort, byte
- *  o   Method stringWithEscapeSubstitutions to support more escape sequences
- *  o   Its a problem if the content has spaces (eg., "#!\ /bin/bash"). This needs
- *      to be fixed
- *  o   Is any operation other equality on the contents supported?
- *      there are entries in the magic file where what seemed like a greater
- *      than operator is supported. eg.,
- *      ">85     byte&0x01       >0      \b, zoomed"
- *      but such entries are commented out in magic.mime file.
- *
+ * <ul>
+ * <li>More commenting</li>
+ * <li>Testing lelong, leshort, byte</li>
+ * <li>Method stringWithEscapeSubstitutions to support more escape sequences.</li>
+ * <li>Its a problem if the content has spaces (eg., "#!\ /bin/bash"). This needs to be fixed.</li>
+ * <li>Is any operations other than equality on the content supported?
+ * <ul>
+ *      <li>there are entries in the magic.mime files where a greater than operator is supported. eg.,</li>
+ *      <li>"&gt;85     byte&0x01       <b>&gt;0</b>      \b, zoomed"</li>
+ *      <li>but these entries are commented out in the magic.mime files.</li>
+ * </ul></li>
+ * </ul>
+ * @author Steven McArdle
  */
-
-public class MagicMimeEntry {
-	private static final Logger logger = Logger.getLogger(MagicMimeEntry.class);
+class MagicMimeEntry {
 
     public static final int STRING_TYPE = 1;
     public static final int BELONG_TYPE = 2;
@@ -63,21 +60,21 @@ public class MagicMimeEntry {
 
 
     private ArrayList subEntries = new ArrayList();
-    int checkBytesFrom;
-    int type;
-    String typeStr;
-    String content;
+    private int checkBytesFrom;
+    private int type;
+    private String typeStr;
+    private String content;
     private long contentNumber;
-    String mimeType;
-    String mimeEnc;
-    MagicMimeEntry parent;
+    private String mimeType;
+    private String mimeEnc;
+    private MagicMimeEntry parent;
+
     private MagicMimeEntryOperation operation = MagicMimeEntryOperation.EQUALS;
 
-    boolean isBetween; // IMHO never used - see other comments below.
+    boolean isBetween; // used for range checking strings.
 
     public MagicMimeEntry(ArrayList entries)
     		throws InvalidMagicMimeEntryException {
-
     	this(0, null, entries);
     }
 
@@ -150,15 +147,10 @@ public class MagicMimeEntry {
     // as much of the file as possible. Currently about 70 entries are incorrect
     void addEntry(String aLine) throws InvalidMagicMimeEntryException
     {
-    	// Originally, the space-to-tab-replacement was only done in case of a parse error (see below), however
-    	// I think that spaces shouldn't be used in the magic file for any other purpose than filling/separating
-    	// (even though they are allowed in the content field according to http://linux.die.net/man/5/magic). But
-    	// since in reality, the magic files don't use spaces in content (I didn't see it in my files) and they
-    	// unfortunately don't stick to the tab as separator, it's safer to replace consecutive spaces by tabs.
-    	// Thus, I think it's OK to replace already here. Marco.
-    	aLine = aLine.replaceAll("\\s+", "\t");
-
-        String trimmed = aLine.replaceAll("^>*", "");
+    	// Try to handle all cases where spaces are used instead of tabs to delineated fields. We must still allow escaped spaces in content so we eliminate
+    	// these first with the <##> tag and then continue to replace all white spaces remaining with tabs and then replace multiple tabs with a single one. Finally
+    	// we put back any valid escaped spaces
+        String trimmed = aLine.replaceAll("[\\\\][ ]", "<##>").replaceAll("^>*", "").replaceAll("\\s+", "\t").replaceAll("[\t]{2,}", "\t").replaceAll("<##>", "\\\\ ");
         String [] tokens = trimmed.split("\t");
 
         // Now strip the empty entries
@@ -181,18 +173,6 @@ public class MagicMimeEntry {
 	            }
             }catch(NumberFormatException e) {
             	throw new InvalidMagicMimeEntryException(Collections.singletonList(this), e);
-//            	// We could have a space delinitaed entry so lets try to handle this anyway
-//
-//            	String newALine = trimmed.replaceAll("\\s+", "\t"); // Bugfix by Marco: We must replace all consecutive white-spaces - not only 2 spaces.
-//            	if (!aLine.equals(newALine))
-//            		addEntry(newALine);
-//            	else {
-//            		// Bugfix by Marco: We must cancel, if the argument stays the same - otherwise we get a StackOverflowError due to an eternal loop.
-//            		throw new InvalidMagicMimeEntryException(e);
-////            		logger.warn(e.getMessage(), e);
-//            	}
-//
-//            	return;
             }
         }
         if (tokens.length > 1) {
@@ -415,10 +395,6 @@ public class MagicMimeEntry {
         ByteBuffer buf;
         switch (getType()) {
             case MagicMimeEntry.STRING_TYPE: {
-//                int len = getContent().length();
-//                buf = ByteBuffer.allocate(len+1);
-//                buf.put(content, startPos, len);
-//                break;
             	int len = 0;
             	// Lets check if its a between test
             	int index = typeStr.indexOf(">"); // FIXME: This is not documented in http://linux.die.net/man/5/magic and I didn't find any occurance of ">string" in my magic.mime files. IMHO we can omit it. Marco. Additionally, it isn't taken into account by the getType(...) method (hence it's wrong currently anyway).
@@ -470,7 +446,9 @@ public class MagicMimeEntry {
         switch (getType()) {
             case MagicMimeEntry.STRING_TYPE: {
             	int len = 0;
-            	// Lets check if its a between test
+            	// The following is not documented in the Magic(5) documentation.
+            	// This is an extension to the magic rules and is provided by this utility.
+            	// It allows for better matching of some text based files such as XML files
             	int index = typeStr.indexOf(">"); // FIXME: This is not documented in http://linux.die.net/man/5/magic and I didn't find any occurance of ">string" in my magic.mime files. IMHO we can omit it. Marco. Additionally, it isn't taken into account by the getType(...) method (hence it's wrong currently anyway).
             	if(index != -1) {
             		len = Integer.parseInt(typeStr.substring(index + 1, typeStr.length() -1));
@@ -508,13 +486,6 @@ public class MagicMimeEntry {
                 break;
             }
         }
-
-//        int len = getRequiredBufferLength();
-//        if (len < 1)
-//        	return null;
-//
-//        buf = ByteBuffer.allocate(len);
-//        raf.read(buf.array(), 0, len);
 
         return buf;
     }
@@ -571,10 +542,8 @@ public class MagicMimeEntry {
 
 
     /*
-     * private methods used for matching
-     * differet types
+     * private methods used for matching different types
      */
-
     private boolean match(ByteBuffer buf) throws IOException {
         boolean matches = true;
         switch (getType()) {
@@ -594,17 +563,7 @@ public class MagicMimeEntry {
                 if (getType() == MagicMimeEntry.LESHORT_TYPE) {
                     byteOrder = ByteOrder.LITTLE_ENDIAN;
                 }
-//                boolean needMask = false;
-//                short sMask = 0xFF; // FIXME shouldn't this be 0xFFFF? Marco.
-//                int indx = typeStr.indexOf('&');
-//                if (indx >= 0) {
-//                    sMask = (short) Integer.parseInt(typeStr.substring(indx+3), 16);
-//                    needMask = true;
-//                } else if (getContent().startsWith("&")) {
-//                    sMask = (short) Integer.parseInt(getContent().substring(3), 16);
-//                    needMask = true;
-//                }
-                matches = matchShort(buf, byteOrder); // , needMask, sMask);
+                matches = matchShort(buf, byteOrder);
                 break;
             }
 
@@ -614,17 +573,7 @@ public class MagicMimeEntry {
                 if (getType() == MagicMimeEntry.LELONG_TYPE) {
                     byteOrder = ByteOrder.LITTLE_ENDIAN;
                 }
-//                boolean needMask = false;
-//                long lMask = 0xFFFFFFFF;
-//                int indx = typeStr.indexOf('&');
-//                if (indx >= 0) {
-//                    lMask = Long.parseLong(typeStr.substring(indx+3), 16);
-//                    needMask = true;
-//                } else if (getContent().startsWith("&")) {
-//                    lMask = Long.parseLong(getContent().substring(3), 16);
-//                    needMask = true;
-//                }
-                matches = matchLong(buf, byteOrder); // , needMask, lMask);
+                matches = matchLong(buf, byteOrder);
                 break;
             }
 
@@ -683,7 +632,6 @@ public class MagicMimeEntry {
     private boolean matchByte(ByteBuffer bbuf) throws IOException
     {
         short b = (short)(bbuf.get(0) & 0xff);
-//        return b == getContent().charAt(0);
 
         if (operation.equals(MagicMimeEntryOperation.EQUALS)) {
         	return b == contentNumber;
@@ -717,35 +665,9 @@ public class MagicMimeEntry {
         	return false;
     }
 
-    private boolean matchShort(
-    		ByteBuffer bbuf,
-            ByteOrder bo
-//            boolean needMask,
-//            short sMask
-    ) throws IOException
+    private boolean matchShort(ByteBuffer bbuf, ByteOrder bo) throws IOException
     {
         bbuf.order(bo);
-//        short got;
-//        String testContent = getContent();
-//        if (testContent.startsWith("0x")) {
-//            got = (short) Integer.parseInt(testContent.substring(2), 16);
-//        } else if (testContent.startsWith("&")) {
-//            got = (short) Integer.parseInt(testContent.substring(3), 16);
-//        } else {
-//            got = (short) Integer.parseInt(testContent);
-//        }
-//
-//        short found = bbuf.getShort();
-//
-//        if (needMask) {
-//            found = (short) (found & sMask);
-//        }
-//
-//        if (got != found) {
-//            return false;
-//        }
-//
-//        return true;
 
         int found = bbuf.getShort() & 0xffff;
 
@@ -781,35 +703,9 @@ public class MagicMimeEntry {
         	return false;
     }
 
-    private boolean matchLong(
-    		ByteBuffer bbuf,
-            ByteOrder bo
-//            boolean needMask,
-//            long lMask
-    ) throws IOException
+    private boolean matchLong(ByteBuffer bbuf, ByteOrder bo) throws IOException
     {
         bbuf.order(bo);
-//        long got;
-//        String testContent = getContent();
-//        if (testContent.startsWith("0x")) {
-//            got = Long.parseLong(testContent.substring(2).trim(), 16); // Without the trim(), I got some NumberFormatExceptions here. Added trim() below, as well. Marco.
-//        } else if (testContent.startsWith("&")) {
-//            got = Long.parseLong(testContent.substring(3).trim(), 16);
-//        } else {
-//            got = Long.parseLong(testContent.trim());
-//        }
-//
-//        long found = bbuf.getInt();
-//
-//        if (needMask) {
-//            found = (short) (found & lMask);
-//        }
-//
-//        if (got != found) {
-//            return false;
-//        }
-//
-//        return true;
 
         long found = bbuf.getInt() & 0xffffffffL;
 
@@ -849,7 +745,7 @@ public class MagicMimeEntry {
     /*
      * when bytes are read from the magic.mime file, the readers in java will
      * read escape sequences as regular bytes. That is, a sequence like \040
-     * (represengint ' ' - space character) will be read as a backslash
+     * (representing ' ' - space character) will be read as a backslash
      * followed by a zero, four and zero -- 4 different bytes and not a single
      * byte representing space. This method parses the string and converts
      * the sequence of bytes representing escape sequence to a single byte
