@@ -40,9 +40,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import eu.medsea.util.MagicMimeEntry;
-import eu.medsea.util.MimeException;
-
 /**
  * <p>
  * The <code>MimeUtil</code> utility class is used to detect mime types from either a files extension
@@ -328,7 +325,7 @@ public class MimeUtil
 		double qos = 0.0;
 		Iterator it = wantedMap.keySet().iterator();
 		while(it.hasNext()) {
-			List wantedList = (List)wantedMap.get((String)it.next());
+			List wantedList = (List)wantedMap.get(it.next());
 			Iterator it2 = wantedList.iterator();
 			while(it2.hasNext()) {
 				String mimeType = (String)it2.next();
@@ -858,7 +855,11 @@ public class MimeUtil
     		try {
     			int offset = 0;
     			while (true) {
-    				int bytesRead = in.read(content, offset, content.length - offset);
+    				int bytesToRead = content.length - offset;
+    				if (bytesToRead < 1)
+    					break;
+
+    				int bytesRead = in.read(content, offset, bytesToRead);
     				if (bytesRead < 0)
     					break;
 
