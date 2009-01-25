@@ -107,6 +107,7 @@ public class MimeUtilTest extends TestCase {
 		assertEquals(MimeUtil.getMagicMimeType("a.url"), MimeUtil.UNKNOWN_MIME_TYPE);
 
 		// These are real files so should return the correct mime type if it can be assessed
+		assertEquals(MimeUtil.getMagicMimeType("test_files/f.tar.gz"), "application/x-gzip");
 		assertEquals(MimeUtil.getMagicMimeType("test_files/a.html"), "text/html");
 		assertEquals(MimeUtil.getMagicMimeType("test_files/b.jpg"), "image/jpeg");
 		assertEquals(MimeUtil.getMagicMimeType("test_files/c.gif"), "image/gif");
@@ -128,6 +129,7 @@ public class MimeUtilTest extends TestCase {
 		assertEquals(MimeUtil.getMagicMimeType(new File("a.url")), MimeUtil.UNKNOWN_MIME_TYPE);
 
 		// These are real files so should return the correct mime type if it can be assessed
+		assertEquals(MimeUtil.getMagicMimeType(new File("test_files/f.tar.gz")), "application/x-gzip");
 		assertEquals(MimeUtil.getMagicMimeType(new File("test_files/a.html")), "text/html");
 		assertEquals(MimeUtil.getMagicMimeType(new File("test_files/b.jpg")), "image/jpeg");
 		assertEquals(MimeUtil.getMagicMimeType(new File("test_files/c.gif")), "image/gif");
@@ -188,6 +190,11 @@ public class MimeUtilTest extends TestCase {
 	}
 
 	public void testGetExtensionMimeTypeAsString() {
+		// A case sensitive match where .h and .H are identified differently
+		assertEquals(MimeUtil.getExtensionMimeTypes("a.h"), "text/plain,text/x-h");
+		assertEquals(MimeUtil.getExtensionMimeTypes("a.H"), "application/x-cplusplus,text/x-c++src,text/plain");
+
+		assertEquals(MimeUtil.getExtensionMimeTypes("a.tar.gz"), "application/x-gzip");
 		assertEquals(MimeUtil.getExtensionMimeTypes("a.png"), "image/png");
 		assertEquals(MimeUtil.getExtensionMimeTypes("a.xml"), "text/xml,application/xml");
 
@@ -204,6 +211,7 @@ public class MimeUtilTest extends TestCase {
 	}
 
 	public void testGetExtensionMimeTypeAsFile() {
+		assertEquals(MimeUtil.getExtensionMimeTypes(new File("a.tar.gz")), "application/x-gzip");
 		assertEquals(MimeUtil.getExtensionMimeTypes(new File("a.png")), "image/png");
 		assertEquals(MimeUtil.getExtensionMimeTypes(new File("a.xml")), "text/xml,application/xml");
 

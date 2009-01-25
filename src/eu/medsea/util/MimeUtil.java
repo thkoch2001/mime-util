@@ -1016,21 +1016,28 @@ public class MimeUtil
 
     /**
      * Get the extension part of a file name defined by the fname parameter.
+     * There may be no extension or it could be a single part extension such as .bat
+     * or a multi-part extension such as tar.gz
      * @param fileName a relative or absolute path to a file
      * @return the file extension or null if it does not have one.
      */
 	public static String getFileExtension(String fileName) {
-		if (fileName == null || fileName.lastIndexOf(".") < 0) {
+		// Remove any path element from this name
+		File file = new File(fileName);
+		fileName = file.getName();
+		if (fileName == null || fileName.indexOf(".") < 0) {
 			return "";
 		}
-		String extension = fileName.substring(fileName.lastIndexOf(".") + 1);
+		return fileName.substring(fileName.indexOf(".") + 1);
+
+		/*
+		String extension = fileName.substring(fileName.indexOf(".") + 1);
 		// Could be that the path actually had a '.' in it so lets check
 		if(extension.contains(File.separator) || extension.contains("/")) {
 			extension = "";
 		}
-		// We always use lower case otherwise we would have to may rules to match such as on windows
-		// which is a case insensitive OS where we would need .BAT .Bat and .bat all being the same thing
-		return extension.toLowerCase();
+		return extension;
+		*/
 	}
 
 	/**
@@ -1114,7 +1121,14 @@ public class MimeUtil
 	 * @throws MimeException if the file cannot be parsed.
 	 */
     public static String getExtensionMimeTypes(String fname) {
-    	String mimeType = (String)extMimeTypes.get(getFileExtension(fname));
+    	String fileExtension = getFileExtension(fname);
+    	// First try case insensitive match
+    	String mimeType = (String)extMimeTypes.get(fileExtension);
+    	if(mimeType != null && mimeType.trim().length() != 0) {
+    		return mimeType;
+    	}
+    	// Failed to find case insensitive extension so lets try again with lowercase
+    	mimeType = (String)extMimeTypes.get(fileExtension.toLowerCase());
     	if(mimeType != null && mimeType.trim().length() != 0) {
     		return mimeType;
     	}
