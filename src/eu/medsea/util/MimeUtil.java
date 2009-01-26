@@ -179,7 +179,7 @@ public class MimeUtil
 
 	        MatchingMagicMimeEntry mostSpecificMatchingEntry = getMostSpecificMatchingEntry(matchingEntries);
 	        if (mostSpecificMatchingEntry != null)
-	        	mimeType = mostSpecificMatchingEntry.getMimeType();
+	        	return mostSpecificMatchingEntry.getMimeType();
 
 	        String textPlain = checkForTextPlain(in);
 	        if (textPlain != null)

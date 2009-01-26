@@ -1,6 +1,8 @@
 package eu.medsea.util.test;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 
 import eu.medsea.util.MimeException;
 import eu.medsea.util.MimeUtil;
@@ -8,6 +10,17 @@ import eu.medsea.util.MimeUtil;
 import junit.framework.TestCase;
 
 public class MimeUtilTest extends TestCase {
+
+	public void testStreamAndFileGetMimeType() {
+		String fileName = "test_files/e.xml";
+
+		try {
+			assertEquals(MimeUtil.getMimeType(new File(fileName), false), MimeUtil.getMimeType(new BufferedInputStream(new FileInputStream(fileName))));
+			assertNotSame(MimeUtil.getMimeType(new File(fileName)), MimeUtil.getMimeType(new BufferedInputStream(new FileInputStream(fileName))));
+		}catch(Exception e) {
+			fail("Should not throw Exception [" + e.getMessage() + "]");
+		}
+	}
 
 	public void testGetBestMatch() {
 		// These tests show how the wild card affects the choice. The first one shows that any application type is preferred
