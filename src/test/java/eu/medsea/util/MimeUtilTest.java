@@ -1,4 +1,4 @@
-package eu.medsea.util.test;
+package eu.medsea.util;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -12,7 +12,7 @@ import junit.framework.TestCase;
 public class MimeUtilTest extends TestCase {
 
 	public void testStreamAndFileGetMimeType() {
-		String fileName = "test_files/e.xml";
+		String fileName = "src/test/resources/e.xml";
 
 		try {
 			assertEquals(MimeUtil.getMimeType(new File(fileName), false), MimeUtil.getMimeType(new BufferedInputStream(new FileInputStream(fileName))));
@@ -83,16 +83,16 @@ public class MimeUtilTest extends TestCase {
 		// If the boolean parameter is true it will search by extension first else by sniffing first
 
 		// Find by extension first
-		assertEquals(MimeUtil.getMimeType("test_files/e.xml"), "text/xml,application/xml");
+		assertEquals(MimeUtil.getMimeType("src/test/resources/e.xml"), "text/xml,application/xml");
 		assertEquals(MimeUtil.getMimeType("a.de"), MimeUtil.UNKNOWN_MIME_TYPE);
-		assertEquals(MimeUtil.getMimeType("test_files/d-png.img"), "image/png");
+		assertEquals(MimeUtil.getMimeType("src/test/resources/d-png.img"), "image/png");
 
 		// Now try using sniffing first
 
 		// Notice how the returned type for the xml extension only returns text/xml and not application/xml as well
-		assertEquals(MimeUtil.getMimeType("test_files/e.xml", false), "text/xml");
+		assertEquals(MimeUtil.getMimeType("src/test/resources/e.xml", false), "text/xml");
 		assertEquals(MimeUtil.getMimeType("a.de", false), MimeUtil.UNKNOWN_MIME_TYPE);
-		assertEquals(MimeUtil.getMimeType("test_files/d-png.img", false), "image/png");
+		assertEquals(MimeUtil.getMimeType("src/test/resources/d-png.img", false), "image/png");
 	}
 
 	public void testGetMimeTypeAsFile() {
@@ -100,16 +100,16 @@ public class MimeUtilTest extends TestCase {
 		// If the boolean parameter is true it will search by extension first else by sniffing first
 
 		// Find by extension first
-		assertEquals(MimeUtil.getMimeType(new File("test_files/e.xml")), "text/xml,application/xml");
+		assertEquals(MimeUtil.getMimeType(new File("src/test/resources/e.xml")), "text/xml,application/xml");
 		assertEquals(MimeUtil.getMimeType(new File("a.de")), MimeUtil.UNKNOWN_MIME_TYPE);
-		assertEquals(MimeUtil.getMimeType(new File("test_files/d-png.img")), "image/png");
+		assertEquals(MimeUtil.getMimeType(new File("src/test/resources/d-png.img")), "image/png");
 
 		// Now try using sniffing first
 
 		// Notice how the returned type for the xml extension only returns text/xml and not application/xml as well
-		assertEquals(MimeUtil.getMimeType(new File("test_files/e.xml"), false), "text/xml");
+		assertEquals(MimeUtil.getMimeType(new File("src/test/resources/e.xml"), false), "text/xml");
 		assertEquals(MimeUtil.getMimeType(new File("a.de"), false), MimeUtil.UNKNOWN_MIME_TYPE);
-		assertEquals(MimeUtil.getMimeType(new File("test_files/d-png.img"), false), "image/png");
+		assertEquals(MimeUtil.getMimeType(new File("src/test/resources/d-png.img"), false), "image/png");
 	}
 
 	public void testGetMagicMimeTypeByString() {
@@ -120,18 +120,18 @@ public class MimeUtilTest extends TestCase {
 		assertEquals(MimeUtil.getMagicMimeType("a.url"), MimeUtil.UNKNOWN_MIME_TYPE);
 
 		// These are real files so should return the correct mime type if it can be assessed
-		assertEquals(MimeUtil.getMagicMimeType("test_files/f.tar.gz"), "application/x-gzip");
-		assertEquals(MimeUtil.getMagicMimeType("test_files/a.html"), "text/html");
-		assertEquals(MimeUtil.getMagicMimeType("test_files/b.jpg"), "image/jpeg");
-		assertEquals(MimeUtil.getMagicMimeType("test_files/c.gif"), "image/gif");
-		assertEquals(MimeUtil.getMagicMimeType("test_files/d.png"), "image/png");
-		assertEquals(MimeUtil.getMagicMimeType("test_files/e.svg"), "image/svg+xml");
+		assertEquals(MimeUtil.getMagicMimeType("src/test/resources/f.tar.gz"), "application/x-gzip");
+		assertEquals(MimeUtil.getMagicMimeType("src/test/resources/a.html"), "text/html");
+		assertEquals(MimeUtil.getMagicMimeType("src/test/resources/b.jpg"), "image/jpeg");
+		assertEquals(MimeUtil.getMagicMimeType("src/test/resources/c.gif"), "image/gif");
+		assertEquals(MimeUtil.getMagicMimeType("src/test/resources/d.png"), "image/png");
+		assertEquals(MimeUtil.getMagicMimeType("src/test/resources/e.svg"), "image/svg+xml");
 
 		// Try with some incorrect file extensions for images
-		assertEquals(MimeUtil.getMagicMimeType("test_files/b-jpg.img"), "image/jpeg");
-		assertEquals(MimeUtil.getMagicMimeType("test_files/c-gif.img"), "image/gif");
-		assertEquals(MimeUtil.getMagicMimeType("test_files/d-png.img"), "image/png");
-		assertEquals(MimeUtil.getMagicMimeType("test_files/e-svg.img"), "image/svg+xml");
+		assertEquals(MimeUtil.getMagicMimeType("src/test/resources/b-jpg.img"), "image/jpeg");
+		assertEquals(MimeUtil.getMagicMimeType("src/test/resources/c-gif.img"), "image/gif");
+		assertEquals(MimeUtil.getMagicMimeType("src/test/resources/d-png.img"), "image/png");
+		assertEquals(MimeUtil.getMagicMimeType("src/test/resources/e-svg.img"), "image/svg+xml");
 	}
 
 	public void testGetMagicMimeTypeByFile() {
@@ -142,18 +142,18 @@ public class MimeUtilTest extends TestCase {
 		assertEquals(MimeUtil.getMagicMimeType(new File("a.url")), MimeUtil.UNKNOWN_MIME_TYPE);
 
 		// These are real files so should return the correct mime type if it can be assessed
-		assertEquals(MimeUtil.getMagicMimeType(new File("test_files/f.tar.gz")), "application/x-gzip");
-		assertEquals(MimeUtil.getMagicMimeType(new File("test_files/a.html")), "text/html");
-		assertEquals(MimeUtil.getMagicMimeType(new File("test_files/b.jpg")), "image/jpeg");
-		assertEquals(MimeUtil.getMagicMimeType(new File("test_files/c.gif")), "image/gif");
-		assertEquals(MimeUtil.getMagicMimeType(new File("test_files/d.png")), "image/png");
-		assertEquals(MimeUtil.getMagicMimeType(new File("test_files/e.svg")), "image/svg+xml");
+		assertEquals(MimeUtil.getMagicMimeType(new File("src/test/resources/f.tar.gz")), "application/x-gzip");
+		assertEquals(MimeUtil.getMagicMimeType(new File("src/test/resources/a.html")), "text/html");
+		assertEquals(MimeUtil.getMagicMimeType(new File("src/test/resources/b.jpg")), "image/jpeg");
+		assertEquals(MimeUtil.getMagicMimeType(new File("src/test/resources/c.gif")), "image/gif");
+		assertEquals(MimeUtil.getMagicMimeType(new File("src/test/resources/d.png")), "image/png");
+		assertEquals(MimeUtil.getMagicMimeType(new File("src/test/resources/e.svg")), "image/svg+xml");
 
 		// Try with some incorrect file extensions for images
-		assertEquals(MimeUtil.getMagicMimeType(new File("test_files/b-jpg.img")), "image/jpeg");
-		assertEquals(MimeUtil.getMagicMimeType(new File("test_files/c-gif.img")), "image/gif");
-		assertEquals(MimeUtil.getMagicMimeType(new File("test_files/d-png.img")), "image/png");
-		assertEquals(MimeUtil.getMagicMimeType(new File("test_files/e-svg.img")), "image/svg+xml");
+		assertEquals(MimeUtil.getMagicMimeType(new File("src/test/resources/b-jpg.img")), "image/jpeg");
+		assertEquals(MimeUtil.getMagicMimeType(new File("src/test/resources/c-gif.img")), "image/gif");
+		assertEquals(MimeUtil.getMagicMimeType(new File("src/test/resources/d-png.img")), "image/png");
+		assertEquals(MimeUtil.getMagicMimeType(new File("src/test/resources/e-svg.img")), "image/svg+xml");
 	}
 
 	public void testMimeQuality() {

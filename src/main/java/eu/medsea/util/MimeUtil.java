@@ -1148,7 +1148,7 @@ public class MimeUtil
     /**
      * The default mime type returned by a no match i.e. is not matched in either the extension mapping or magic.mime rules is
      * application/octet-stream. However, applications may want to treat a no match different from a match that could return application/octet-stream.
-     * This method allows you to set a different mime type to represent a no match such as a custom mime type like application/unknown-mime-type
+     * This method allows you to set a different mime type to represent a no match such as a custom mime type like application/x-unknown-mime-type
      * @param mimeType set the default returned mime type for a no match.
      */
     public static void setUnknownMimeType(String mimeType) {
