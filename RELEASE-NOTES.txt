@@ -23,10 +23,9 @@
 
  This file contains the release notes of each version of mime-util
 
- Version 1.0 Released 07-09-2007
+ Version 1.2 Released 27-01-2009
 
- 1. Initial implementation of the mime detection utility library
-
+ 1. This release has been restructured as a maven project
 
  Version 1.1 Released 21-01-2009
 
@@ -48,6 +47,11 @@ Packaged as a maven 2 project
 Plugins for Eclipse and Freedesktop
 
 Plus may more new features....
+
+
+ Version 1.0 Released 07-09-2007
+
+ 1. Initial implementation of the mime detection utility library
 
 
 We hope you enjoy this project as much as we enjoy developing it, Please feel free to register any
