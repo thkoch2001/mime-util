@@ -8,7 +8,7 @@
 		<name>Medsea Business Solutions S.L.</name>
 	</organization>
 
-	<version>1.2</version>
+	<version>1.3</version>
 	<description>mime-util is a simple to use, small, light weight and fast open source java utility library that can detect the mime types of files and streams.
 		Due to the use of regular expressions and the java.nio packages it requires at least Java 1.4.
 		mime-util uses file extension mappings and the magic.mime rules files located on your system as used by the Unix file(1) command.

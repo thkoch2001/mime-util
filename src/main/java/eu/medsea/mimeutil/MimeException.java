@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package eu.medsea.util;
+package eu.medsea.mimeutil;
 
 /**
  *
- * This exception is thrown by methods that fail while checking a file to determine the mime type.
+ * This exception is thrown by methods that fail while checking a file to determine the mime types.
  * @author Steven McArdle
- * @deprecated Use {@link eu.medsea.mimeutil.MimeException} instead!
  *
  */
 public class MimeException extends RuntimeException {

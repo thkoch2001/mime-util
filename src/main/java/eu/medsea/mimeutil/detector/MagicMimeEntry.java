@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.medsea.util;
+package eu.medsea.mimeutil.detector;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,24 +27,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
+import eu.medsea.mimeutil.MimeType;
+
+
 /**
  * A single MagicMime entry from a magic.mime file. This entry can contain
  * sub-entries; so it recursively includes itself, if sub-entries are found.
  * Basically this class represents a node in a simple n-array tree
  *
- * TODO:
- * <ul>
- * <li>More commenting</li>
- * <li>Testing lelong, leshort, byte</li>
- * <li>Method stringWithEscapeSubstitutions to support more escape sequences.</li>
- * <li>Its a problem if the content has spaces (eg., "#!\ /bin/bash"). This needs to be fixed.</li>
- * <li>Is any operations other than equality on the content supported?
- * <ul>
- *      <li>there are entries in the magic.mime files where a greater than operator is supported. eg.,</li>
- *      <li>"&gt;85     byte&0x01       <b>&gt;0</b>      \b, zoomed"</li>
- *      <li>but these entries are commented out in the magic.mime files.</li>
- * </ul></li>
- * </ul>
  * @author Steven McArdle
  */
 class MagicMimeEntry {
@@ -65,7 +55,7 @@ class MagicMimeEntry {
     private String typeStr;
     private String content;
     private long contentNumber;
-    private String mimeType;
+    private MimeType mimeType;
     private String mimeEnc;
     private MagicMimeEntry parent;
 
@@ -206,7 +196,7 @@ class MagicMimeEntry {
         	content = ""; // prevent NullPointerException happening later in readBuffer(...)
 
         if (tokens.length > 3) {
-            mimeType = tokens[3].trim();
+            mimeType = new MimeType(tokens[3].trim());
         }
         if (tokens.length > 4) {
             mimeEnc = tokens[4].trim();
@@ -293,12 +283,12 @@ class MagicMimeEntry {
     	return content;
     }
 
-    public String getMimeType() {
+    public MimeType getMimeType() {
         return mimeType;
     }
 
-    public MatchingMagicMimeEntry getMatch(InputStream in)
-    throws IOException
+    MagicMimeEntry getMatch(InputStream in)
+    	throws IOException
     {
     	int bytesToRead = getInputStreamMarkLength();
     	in.mark(bytesToRead);
@@ -325,8 +315,7 @@ class MagicMimeEntry {
     }
 
 
-//    public String getMatch(byte[] content) throws IOException {
-    public MatchingMagicMimeEntry getMatch(byte[] content) throws IOException {
+    MagicMimeEntry getMatch(byte[] content) throws IOException {
         ByteBuffer buf = readBuffer(content);
         if (buf == null)
             return null;
@@ -335,49 +324,49 @@ class MagicMimeEntry {
         boolean matches = match(buf);
         if (matches) {
             int subLen = subEntries.size();
-            String myMimeType = getMimeType();
+            MimeType mimeType = getMimeType();
             if (subLen > 0) {
                 for (int k=0; k<subLen; k++) {
                     MagicMimeEntry me = (MagicMimeEntry) subEntries.get(k);
-                    MatchingMagicMimeEntry matchingEntry = me.getMatch(content);
+                    MagicMimeEntry matchingEntry = me.getMatch(content);
                     if (matchingEntry != null) {
                         return matchingEntry;
                     }
                 }
-                if (myMimeType != null) {
-                	return new MatchingMagicMimeEntry(this);
+                if (mimeType != null) {
+                	return this;
                 }
             } else {
-            	if (myMimeType != null)
-            		return new MatchingMagicMimeEntry(this);
+            	if (mimeType != null)
+            		return this;
             }
         }
 
         return null;
     }
 
-//    public String getMatch(RandomAccessFile raf) throws IOException {
-    public MatchingMagicMimeEntry getMatch(RandomAccessFile raf) throws IOException {
+    MagicMimeEntry getMatch(RandomAccessFile raf) throws IOException {
         ByteBuffer buf = readBuffer(raf);
-        if (buf == null)
+        if (buf == null) {
             return null;
+        }
         boolean matches = match(buf);
         if (matches) {
-            String myMimeType = getMimeType();
+            MimeType mimeType = getMimeType();
             if (subEntries.size() > 0) {
                 for (int i=0; i<subEntries.size(); i++) {
                     MagicMimeEntry me = (MagicMimeEntry) subEntries.get(i);
-                    MatchingMagicMimeEntry matchingEntry = me.getMatch(raf);
+                    MagicMimeEntry matchingEntry = me.getMatch(raf);
                     if (matchingEntry != null) {
                         return matchingEntry;
                     }
                 }
-                if (myMimeType != null) {
-                    return new MatchingMagicMimeEntry(this);
+                if (mimeType != null) {
+                    return this;
                 }
             } else {
-            	if (myMimeType != null)
-            		return new MatchingMagicMimeEntry(this);
+            	if (mimeType != null)
+            		return this;
             }
         }
 
@@ -396,8 +385,10 @@ class MagicMimeEntry {
         switch (getType()) {
             case MagicMimeEntry.STRING_TYPE: {
             	int len = 0;
-            	// Lets check if its a between test
-            	int index = typeStr.indexOf(">"); // FIXME: This is not documented in http://linux.die.net/man/5/magic and I didn't find any occurance of ">string" in my magic.mime files. IMHO we can omit it. Marco. Additionally, it isn't taken into account by the getType(...) method (hence it's wrong currently anyway).
+            	// The following is not documented in the Magic(5) documentation.
+            	// This is an extension to the magic rules and is provided by this utility.
+            	// It allows for better matching of some text based files such as XML files
+             	int index = typeStr.indexOf(">");
             	if(index != -1) {
             		len = Integer.parseInt(typeStr.substring(index + 1, typeStr.length() -1));
             		isBetween = true;
@@ -449,7 +440,7 @@ class MagicMimeEntry {
             	// The following is not documented in the Magic(5) documentation.
             	// This is an extension to the magic rules and is provided by this utility.
             	// It allows for better matching of some text based files such as XML files
-            	int index = typeStr.indexOf(">"); // FIXME: This is not documented in http://linux.die.net/man/5/magic and I didn't find any occurance of ">string" in my magic.mime files. IMHO we can omit it. Marco. Additionally, it isn't taken into account by the getType(...) method (hence it's wrong currently anyway).
+            	int index = typeStr.indexOf(">");
             	if(index != -1) {
             		len = Integer.parseInt(typeStr.substring(index + 1, typeStr.length() -1));
             		isBetween = true;

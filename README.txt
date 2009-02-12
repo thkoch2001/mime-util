@@ -1,7 +1,7 @@
+Ôªø<pre>
 This is being released by Medsea Business Solutions S.L. under the Apache Licence V2.
 
 For Usage instructions see the end of this file and the unit tests provided with this utility.
-
 
 
 MimeUtil Mime Type Detection utility is a very light weight utility that depends only on apache commons-logging.
@@ -42,7 +42,7 @@ extensions within the MimeUtil class.
 
 The list is build in the following order:
 
-1. Load the properties file from the mime utility jar named eu.medsea.mime.mime-types.properties.
+1. Load the properties file from the mime utility jar named eu.medsea.mimeutil.mime-types.properties.
 2. Locate and load a file named .mime-types.properties from the users home directory if one exists.
 3. Locate and load a file named mime-types.properties from the classpath if one exists
 4. locate and load a file named by the JVM property mime-mappings i.e. -Dmime-mappings=../my-mime-types.properties
@@ -59,9 +59,7 @@ unless you over ride this mapping this is the list that will be returned by the 
 NOTE 1> The mime types are NOT additive, so if you add a different association for .hlp files in one of the files used during initialisation then your
 new mappings will override the previously defined mapping.
 
-NOTE 2> ALL the extensions should be added in lower case. The reason for this is to cater for case insensitive OS's such as windows. For instance, windows
-does not distinguish the difference between .BAT .Bat .bat .bAt & .baT as a valid file extension for the same file type. This is another reason that mime
-mapping using a files extension is not an exact science. Internally the mime utility will try to convert the extension to lower case.
+NOTE 2> Extensions can be added in a sensitive manor. This means that you can distinguish the difference between .c and .C extensions. Internally the utility will first try to match in a case sensitive manor and if no match is found will try again by converting the extension to lowercase. The best policy here is to add extensions to the file in lowercase and only if you have a specific need to to identify an extension in a case sensitive fashion, such as is the case with .c representing c program source files and .C representing C++ source files, both of which should have different mime types associated to them.
 
 Fortunately, we have compiled a relatively large list of mappings into a java properties file from information gleaned from many sites on the Internet.
 This file resides in the eu.medsea.util.mime-types.properties file and is not guaranteed to be correct or contain all the known mappings for a file
@@ -73,9 +71,8 @@ file using a different extension than the one that it would normally be associat
 if the file has no extension at all, such as Make, then it's not going to be possible to determine a mime type using this technique
 (see the next section for a better guessing algorithm under these conditions).
 
-
 The second method of detection provided by the utility is to use Unix 'magic.mime' file processing. If you are not using a Unix system or your system
-does not have a 'magic.mime' file, donít worry, we have included a copy within the project and if we can't locate the files on your system we will use
+does not have a 'magic.mime' file, don‚Äôt worry, we have included a copy within the project and if we can't locate the files on your system we will use
 this internal version instead. This mechanism is much more processor intensive than the first case of file extension association so it is
 much better for you and your systems performance if you can define you previously unknown file extensions in your extended mime-types.properties files
 some how. However, this is not always possible. In one particular case we had a CMS (Content Management System) that stored all of its images within a
@@ -109,7 +106,7 @@ home directory and as a JVM property. The exact order of location and loading is
 2. From any file named magic.mime that can be found on the classpath
 3. From a file named .magic.mime in the users home directory
 4. From the normal Unix locations /usr/share/file/magic.mime and /etc/magic.mime (in that order)
-5. From the internal magic.mime file eu.medsea.util.magic.mime if, and only if, no files are located in step 4
+5. From the internal magic.mime file eu.medsea.mimeutil.magic.mime if, and only if, no files are located in step 4
 
 So as you can see, plenty of places you can extend the default rules.
 
@@ -124,23 +121,23 @@ see the next section for a description on how to use this extension mechanism.
 DO NOT modify the internal copy of 'magic.mime' OR the original 'magic.mime' files located on your Unix system.
 
 We extended the string type rule which allows you to match strings in a file where you do not know the actual offset of the string containing magic
-file information it goes something like ìwhat I am looking for will be ësomewhereí within the next n charactersî from this location.
+file information it goes something like ‚Äúwhat I am looking for will be ‚Äòsomewhere‚Äô within the next n characters‚Äù from this location.
 This is an important improvement to the string matching rules especially for text based documents such as HTML and XML formats.
 The reasoning for this was that the rules for matching SVG images defined in the original 'magic.mime' file hardly ever worked, this is
 because of the fixed offset definitions within the magic rule format. As XML documents generally have an XML declaration that can
 contain various optional attributes the length of this header often cannot be determined, therefore we cannot know that the DOCTYPE
-declaration for an SVG xml file starts at ìthisî location, all we can say is that, if this is an SVG xml file then it will have an SVG DOCTYPE
+declaration for an SVG xml file starts at ‚Äúthis‚Äù location, all we can say is that, if this is an SVG xml file then it will have an SVG DOCTYPE
 somewhere near the beginning of the file and probably within the first 1024 characters. So we test for the xml declaration and then we test for
 the DOCTYPE within a specified number of characters and if found then we match this rule. This extension can be used to better identify ALL of the
 XML type mime mappings in the current 'magic.mime' file. Remember though, as we stated earlier mime type matching using any of the mechanisms supported
 is not an exact science and should always be viewed as a 'best guess' and not as a 'definite match'.
-
 
 An example of overriding the PNG and SVG rules can be found in our internal 'magic.mime' file located in the test_files directory (this file is NOT used
 when locating rules and is used for testing purposes only).
 This PNG rule overrides the original PNG rule defined in the 'magic.mime' file we took from the Internet, and the SVG rule overrides the SVG detection also
 defined in the original 'magic.mime' file
 
+<code>
 #PNG Image Format
 0		string		\211PNG\r\n\032\n		image/png
 
@@ -153,7 +150,7 @@ defined in the original 'magic.mime' file
 #	So the next line states that somewhere after the 15th character position we should find the DOCTYPE declaration.
 #	This DOCTYPE declaration should be within 1024 characters from the 15th character
 >15	string>1024<	\<!DOCTYPE\ svg\ PUBLIC\ "-//W3C//DTD\ SVG 	image/svg+xml
-
+</code>
 As you can see the extension is defined using the syntax string>bufsize<. It can only be used on a string type and basically
 means match this within bufsize character from the position defined at the beginning of the line. This rule is much more verbose than
 required as we really only need to check for the presence of SVG. As we said earlier, this is a test case file and not used by the utility
@@ -174,23 +171,26 @@ text/xml, application/xml, application/xhtml+xml, text/html;q=0.9, text/plain;q=
 	For example: The returned mime type for the file extension .tar is application/x-tar as it only matches the */*;q=0.1
 
 2. Next we put the passed in entries into an ordered map. This is keyed on the major mime types such as text and application, in the order they first appear. This gives us:
-	text/xml
-		/html;q=0.9
-		/plain;q=0.8
-		/css
-		/*
-	application/xml
-	           /xhtml=xml
-	video/x-mng
-	image/png
-	     /jpeg
-	     /gif;q=0.2
-	*/*
-
+<code>
+text/xml
+	/html;q=0.9
+	/plain;q=0.8
+	/css
+	/*
+application/xml
+           /xhtml=xml
+video/x-mng
+image/png
+         /jpeg
+	 /gif;q=0.2
+*/*
+</code>
 3. If more than one mime type is associated with a file then we remove all entries from the map that are not supported.
 	For example: The returned mime types for the file extension .xhtml are application/xhtml+xml and text/html (in this order). This leaves us with:
-		text/html;q=0.9
-		application/xhtml+xml
+<code>
+text/html;q=0.9
+application/xhtml+xml
+</code>
 
 	As the application/xhtml+xml entry has a higher QoS (Quality of Service) indicator than text/html;q=0.9 this is the mime type that will be returned.
 	In this case it was also the preferred i.e. the first in the list of supported mime types. If the precedence had been the other way around in the accept
@@ -206,11 +206,12 @@ text/xml, application/xml, application/xhtml+xml, text/html;q=0.9, text/plain;q=
 	is 0.02 i.e. higher than the default for a major component wild card.
 
 The following list shows the order of precedence for a single major mime type:
-	a) text/html;level=1 - text/html - text/html;q=1.0 (ALL equivalent)
+<code>
+    a) text/html;level=1 - text/html - text/html;q=1.0 (ALL equivalent)
     b) text/html;q=0.8
     c) text/* (given a default QoS of 0.02)
     d) */* (given a default QoS of 0.01)
-
+</code>
     Entries wih the same precendece are kept in the order they appear in the Accept header, and returned in that order. So an Accept header of:
     Accept: text/html, text/plain, text/xml;q=1.0, text/url has 4 entries all of which carry the same precedence. So unless a specific match occures,
     i.e. say for text/xml then the first mime type in this list will be returned.
@@ -226,7 +227,8 @@ Please register any bugs you find on sourceforge and we will do our best to addr
 It would also be very helpful for you to email in modifications to mime types currently listed in the mime-types.properties file.
 It would also be great if people would send in any modifications or new rules to the mime rules in the magic.mime types.
 These can be emailed to smcardle@smcardle.com. We will list the additions/changes to mime-types.properties and magic.mime files on sourceforge as a
-seperated downloads for the project. This will allow all users to be able to locate these rules easily. We expect that we will add any changes to
+separated downloads for the project. This will allow all users to be able to locate these rules easily. We expect that we will add any changes to
 the mime-type.properties with each new release. However, for the magic.mime rules file we will just keep this up to date on sourceforge as we do not want
 to adversely affect installations that rely on the Unix system native magic.mime files for correct use i.e. if we rolled these changes into the internal file,
 they would not be seen on systems supporting magic.mime such as ALL versions of Unix and Linux
+</pre>

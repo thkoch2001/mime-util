@@ -1,0 +1,53 @@
+    /**
+     * Fast convert a byte array to a hex string with possible leading zero.
+     *
+     * @param b      array of bytes you want to convert to hex.
+     * @param length how many bytes you wanted convented to byte.
+     *
+     * @return hex equivalent of the bytes
+     */
+    private static String toHexString( byte[] b, int length )
+        {
+        StringBuilder sb = new StringBuilder( length * 3 );
+        for ( int i = 0; i < length; i++ )
+            {
+            if ( i != 0 )
+                {
+                sb.append( ' ' );
+                }
+            // look up high nibble char
+            sb.append( hexChar[ ( b[ i ] & 0xf0 ) >>> 4 ] );
+
+            // look up low nibble char
+            sb.append( hexChar[ b[ i ] & 0x0f ] );
+            }
+        return sb.toString();
+        }
+
+    /**
+     * Fast convert a String to a hex string with possible leading zero.
+     *
+     * @param b      array of chars you want to convert to hex.
+     * @param length how many chars you wanted convented to byte.
+     *
+     * @return hex equivalent of the bytes
+     */
+    private static String toHexString( String b, int length )
+        {
+        StringBuilder sb = new StringBuilder( length * 5 );
+        for ( int i = 0; i < length; i++ )
+            {
+            if ( i != 0 )
+                {
+                sb.append( ' ' );
+                }
+            // work high order to low
+            final int c = b.charAt( i );
+            sb.append( hexChar[ ( c & 0xf000 ) >>> 12 ] );
+            sb.append( hexChar[ ( c & 0xf00 ) >>> 8 ] );
+            sb.append( hexChar[ ( c & 0xf0 ) >>> 4 ] );
+            sb.append( hexChar[ c & 0x0f ] );
+            }
+        return sb.toString();
+        }
+

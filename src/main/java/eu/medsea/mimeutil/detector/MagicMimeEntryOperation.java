@@ -1,4 +1,4 @@
-package eu.medsea.util;
+package eu.medsea.mimeutil.detector;
 
 import java.util.HashMap;
 import java.util.Map;
