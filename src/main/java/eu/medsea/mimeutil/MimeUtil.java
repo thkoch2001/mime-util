@@ -80,8 +80,13 @@ import eu.medsea.mimeutil.detector.MimeDetector;
  * <p>
  * The resulting <code>Collection</code> of mime types returned in response to a getMimeTypes(...) call is a normalised list of the
  * accumulation of mime types returned by each of the registered <code>MimeDetector</code>(s) that implement the specified getMimeTypes(...)
- * method. This Collection of mime types can be influenced using MimeHandler(s) that can be registered against one or more MimeHandler(s) and
- * manipulate the Collection of mime types that will be returned to the client.
+ * methods. This Collection of mime types can be influenced using MimeHandler(s) that can be registered against one or more MimeDetector(s) that
+ * are able to manipulate the Collection of mime types that will be returned to the client.
+ * </p>
+ * <p>
+ * All methods in this class that return a Collection object actually return a {@link MimeTypeHashSet} that implements both the {@link Set} and {@link Collection}
+ * interfaces.
+ * </p>
  *
  * @author Steven McArdle.
  *
@@ -334,7 +339,7 @@ public class MimeUtil {
 	 * name of the class implementing the MimeDetector.
 	 * @return
 	 */
-	public MimeDetector getMimeDetector(final String name) {
+	public static MimeDetector getMimeDetector(final String name) {
 		return mimeUtilMimeDetector.getMimeDetector(name);
 	}
 
@@ -565,7 +570,7 @@ public class MimeUtil {
 	 * @return the most specific MimeType. If more than one of the mime types in the Collection
 	 * have the same value then the first one found with this value in the Collection is returned.
 	 */
-	public MimeType getMostSpecificMimeType(final Collection mimeTypes) {
+	public static MimeType getMostSpecificMimeType(final Collection mimeTypes) {
 		MimeType mimeType = null;
 		int specificity = 0;
 		for(Iterator it = mimeTypes.iterator(); it.hasNext();) {
@@ -659,7 +664,7 @@ public class MimeUtil {
 	 * @return the quality value as a double between 0.0 and 1.0
 	 * @throws MimeException
 	 */
-	public double getQuality(final String mimeType) throws MimeException
+	public static double getQuality(final String mimeType) throws MimeException
 	{
 		if(mimeType == null || mimeType.trim().length() == 0) {
 			return 0.0;
@@ -801,6 +806,15 @@ public class MimeUtil {
 	}
 }
 
+/**
+ * <p>
+ * All methods in this class that return a Collection object actually return a {@link MimeTypeHashSet} that implements both the {@link Set} and {@link Collection}
+ * interfaces.
+ * </p>
+
+ * @author Steven McArdle
+ *
+ */
 class MimeUtilMimeDetectorRegistry {
 
 	private static Log log = LogFactory.getLog(MimeUtilMimeDetectorRegistry.class);

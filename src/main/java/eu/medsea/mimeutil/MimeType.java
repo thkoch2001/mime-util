@@ -33,7 +33,7 @@ import eu.medsea.mimeutil.MimeException;
  * @author Steven McArdle
  *
  */
-public class MimeType implements Serializable {
+public class MimeType implements Comparable, Serializable {
 
 	private static final long serialVersionUID = -1324243127744494894L;
 
@@ -52,6 +52,7 @@ public class MimeType implements Serializable {
 	public MimeType(final MimeType mimeType) {
 		this.mediaType = mimeType.mediaType;
 		this.subType = mimeType.subType;
+		this.specificity = mimeType.specificity;
 	}
 
 	/**
@@ -99,14 +100,7 @@ public class MimeType implements Serializable {
 	 * @return true if the MimeType passed in has the same media and sub types, else returns false.
 	 */
 	private boolean match(final String mimeType) {
-		String [] parts = mimeSplitter.split(mimeType);
-		if(parts.length > 1) {
-			if(this.mediaType.equals(parts[0]) && this.subType.equals(parts[1])) {
-				return true;
-			}
-			return false;
-		}
-		return false;
+		return toString().equals(mimeType);
 	}
 
 	/**
@@ -126,12 +120,12 @@ public class MimeType implements Serializable {
 	 * @see Object#equals(Object o)
 	 */
 	public boolean equals(Object o) {
-		if(o instanceof String) {
+		if(o instanceof MimeType) {
+			if(this.mediaType.equals(((MimeType)o).mediaType) && this.subType.equals(((MimeType)o).subType)) {
+				return true;
+			}
+		} else if(o instanceof String) {
 			return match((String)o);
-		}
-		MimeType mimeType = (MimeType)o;
-		if(this.mediaType.equals(mimeType.mediaType) && this.subType.equals(mimeType.subType)) {
-			return true;
 		}
 		return false;
 	}
@@ -191,5 +185,15 @@ public class MimeType implements Serializable {
 			return "*";
 		}
 		return subType;
+	}
+
+	/**
+	 * Allows us to use MimeType(s) in Sortable Set's such as the TreeSet.
+	 */
+	public int compareTo(Object arg0) {
+		if(arg0 instanceof MimeType) {
+			return toString().compareTo(((MimeType)arg0).toString());
+		}
+		return 0;
 	}
 }

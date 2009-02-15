@@ -21,15 +21,27 @@ import java.util.Iterator;
 import java.util.Set;
 
 /**
- * This class is used to represent a collection of <code>MimeType</code>(s).
+ * This class is used to represent a collection of <code>MimeType</code> objects.
  * <p>
  * It uses a {@link HashSet} as the backing collection and implements all
  * methods of both the {@link Set} and {@link Collection} interfaces.
  * </p>
  * <p>
- * Some of the methods have been adapted to make it more useful for <code>MimeType</code>(s)
- * such as the add methods. Most of the methods just delegate to the underlying HashSet. This class
- * can be used in place of a normal Collection or Set.
+ * This class is pretty tolerant of the parameter type that can be passed to methods that
+ * take an {@link Object} parameter. These methods can take any of the following types:
+ * <ul>
+ * <li><code>MimeType</code> see {@link MimeType}</li>
+ * <li><code>String</code>. This can be a string representation of a mime type such as text/plain or a
+ * String representing a comma separated list of mime types such as text/plain,application/xml</li>
+ * <li><code>String []</code>. Each element of the array can be a string representation of a mime type or a comma separated
+ * list of mime types. See above.</li>
+ * <li><code>Collection</code>. Each element in the collection can be one of the above types or another Collection.</li>
+ * </ul>
+ * <p>
+ * Also methods taking a Collection as the parameter are able to handle Collections containing elements that are any of the types listed above.
+ * </p>
+ * If an object is passed that is not one of these types the method will throw a MimeException unless the method returns a
+ * boolean in which case it will return false.
  * </p>
  * @author Steven McArdle
  *
@@ -41,149 +53,313 @@ class MimeTypeHashSet implements Set, Collection {
 	MimeTypeHashSet() {}
 
 	/**
-	 * Construct a new MimeTypeHashSet from an existing collection of
-	 * MimeType(s). Iterates over the collection and only keeps MimeType(s)
-	 * @param collection existing collection of MimeType(s).
+	 * Construct a new MimeTypeHashSet from a collection containing elements that can represent mime types.
+	 *
+	 * @param collection See the introduction to this class for a description of the elements the Collection can contain.
 	 */
 	MimeTypeHashSet(final Collection collection) {
-		for(Iterator it = collection.iterator(); it.hasNext();) {
-			Object o = it.next();
-			if(o instanceof MimeType) {
-				hashSet.add(o);
-			}
-		}
+		addAll(collection);
 	}
 
+	/**
+	 * @see HashSet#HashSet(int)
+	 * @param initialCapacity
+	 */
 	MimeTypeHashSet(final int initialCapacity) {
 		hashSet = new HashSet(initialCapacity);
 	}
 
+	/**
+	 * @see HashSet#HashSet(int, float)
+	 * @param initialCapacity
+	 * @param loadFactor
+	 */
 	MimeTypeHashSet(final int initialCapacity, float loadFactor) {
 		hashSet = new HashSet(initialCapacity, loadFactor);
 	}
 
+	/**
+	 * Construct a MimeTypeHashSet from a String object representing a mime type. The String can be a comma separated
+	 * list each of which can be a string representation of a mime type.
+	 * @param arg0 See the introduction to this class for a description of the String parameter that can be passed.
+	 */
 	MimeTypeHashSet(final String arg0) {
-		this(((String)arg0).split(","));
-	}
-
-	MimeTypeHashSet(final String [] arg0) {
-		for(int i = 0; i < arg0.length; i++) {
-			hashSet.add(new MimeType(arg0[i].trim()));
-		}
-	}
-
-	MimeTypeHashSet(final MimeType mimeType) {
-		hashSet.add(mimeType);
+		add(arg0);
 	}
 
 	/**
-	 * This method will create MimeType(s) from the argument and add it or them
-	 * to the internal HashSet. It is able to take different types of object related to mime types and ad them.
-	 *
-	 * @param arg0 can be a String, String [] or MimeType
-	 * @return true if the internal HashSet has been added to false other wise.
+	 * Construct a MimeTypeHashSet from a String [] object representing a mime types. Each string in the array can be a string
+	 * representation of a mime type or a comma separated list each of which can be a string representation of a mime type.
+	 * @param arg0 See the introduction to this class for a description of the String [] parameter that can be passed.
+	 */
+	MimeTypeHashSet(final String [] arg0) {
+		add(arg0);
+	}
+
+	/**
+	 * Construct a MimeTypeHashSet from a single MimeType
+	 * @param mimeType
+	 */
+	MimeTypeHashSet(final MimeType mimeType) {
+		add(mimeType);
+	}
+
+	/**
+	 * This method will add MimeType(s) to the internal HashSet if it does not already contain them.
+	 * It is able to take different types of object related to mime types as discussed in the introduction to this class.
+	 * <p>
+	 * This is a pretty useful override of the HashSet add(Object) method and can be used in the following ways:
+	 * </p>
+	 * <p>
+	 * <ul>
+	 * <li>add(String mimeType) examples <code>add("text/plain"); add("text/plain,application/xml");</code></li>
+	 * <li>add(String [] mimeTypes) examples <code>add(new String [] {"text/plain", "application/xml"});</code></li>
+	 * <li>add(Collection mimeTypes) This delegates to the addAll(Collection) method</li>
+	 * <li>add(MimeType)</li>
+	 * </ul>
+	 * </p>
+	 * @param arg0 can be a MimeType, String, String [] or Collection. See the introduction to this class.
+	 * @return true if the set did not already contain the specified element.
 	 */
 	public boolean add(final Object arg0) {
-		if(arg0 instanceof String) {
-			Collection c = new MimeTypeHashSet((String)arg0);
-			return this.addAll(c);
-		} else if(arg0 instanceof String []) {
+		if(arg0 == null) {
+			// We don't allow null
+			return false;
+		}
+		if((arg0 instanceof MimeType)) {
+			// Add a MimeType
+			updateSpecificity(arg0);
+			return hashSet.add(arg0);
+
+		} else if(arg0 instanceof Collection) {
+			// Add a collection
+			return addAll((Collection)arg0);
+		} else if(arg0 instanceof String) {
+			// Add a string representation of a mime type that could be a comma separated list
+			String [] mimeTypes = ((String)arg0).split(",");
 			boolean added = false;
-			for(int i = 0; i < ((String [])arg0).length; i++) {
-				MimeType mimeType = new MimeType(((String[])arg0)[i]);
-				updateSpecificity(mimeType);
-				if(hashSet.add(mimeType)) {
-					added = true;
+			for(int i = 0; i < mimeTypes.length; i++) {
+				try {
+					if(add(new MimeType(mimeTypes[i]))) {
+						added = true;
+					}
+				}catch(Exception e) {
+					// Ignore this as it's not a type we can use
 				}
 			}
 			return added;
-		}else if((arg0 instanceof MimeType)) {
-			updateSpecificity(arg0);
-			return hashSet.add(arg0);
+		} else if(arg0 instanceof String []) {
+			// Add a String array of mime types each of which can be a comma separated list of mime types
+			boolean added = false;
+			String [] mimeTypes = (String [])arg0;
+			for(int i = 0; i < mimeTypes.length; i++) {
+				String [] parts = mimeTypes[i].split(",");
+				for(int j = 0; j < parts.length; j++) {
+					try {
+						if(add(new MimeType(parts[j]))) {
+							added = true;
+						}
+					}catch(Exception e) {
+						// Ignore this as it's not a type we can use
+					}
+				}
+			}
+			return added;
 		}
-		throw new MimeException("Parameter must be an instance of a MimeType a String or a String [].");
+		// Can't add this type
+		return false;
 	}
 
 	/**
-	 * Take a collection of objects and adds them to the internal HashSet if they are MimeType(s)
-	 * @param arg0 is a collection that should contain MimeType(s). If any of the objects in the collection are
-	 * not MimeType(s) they are ignored.
-	 * @return true if the internal HashMap has been added to fals otherwise.
+	 * Add a collection of objects to the internal HashSet. See the introduction to this class to see what the Collection can contain.
+	 * @param arg0 is a collection of objects each of which should contain or be items that can be used to represent mime types.
+	 * Objects that are not recognised as being able to represent a mime type are ignored.
+	 * @return true if this collection changed as a result of the call.
+	 * @throws NullPointerException
 	 */
-	public boolean addAll(final Collection arg0) {
+	public boolean addAll(final Collection arg0) throws NullPointerException {
+		if(arg0 == null) {
+			throw new NullPointerException();
+		}
 		boolean added = false;
 		for(Iterator it = arg0.iterator(); it.hasNext();) {
-			Object o = it.next();
-			if(o instanceof MimeType) {
-				updateSpecificity((MimeType)o);
-				if(add((MimeType)o)) {
+			try {
+				if(add(it.next())) {
 					added = true;
 				}
-
+			}catch(Exception e) {
+				// Ignore this entry as it's not a types that can be turned into MimeTypes
 			}
 		}
 		return added;
 	}
 
+	/**
+	 * @see HashSet#clear()
+	 */
 	public void clear() {
 		hashSet.clear();
 	}
 
 	/**
-	 * Checks if this MimeTypeHashSet contains either the MimeType or a String or a String [] of mime types
+	 * Checks if this Collection contains the type passed in. See the introduction of this class for a description of the types that can be parsed.
+	 * @param an object representing one of the recognised types that can represent mime types.
+	 * @return true if this set contains the specified element or elements.
 	 */
 	public boolean contains(final Object o) {
-		if(o instanceof String) {
-			Collection c = new MimeTypeHashSet((String)o);
-			return this.containsAll(c);
+		if(o instanceof MimeType) {
+			return hashSet.contains(o);
+		} else if(o instanceof Collection) {
+			return containsAll((Collection)o);
+		} else if(o instanceof String) {
+			String [] parts = ((String) o).split(",");
+			for(int i = 0; i < parts.length; i++) {
+				if(!contains(new MimeType(parts[i]))) {
+					return false;
+				}
+			}
+			return true;
 		} else if(o instanceof String []) {
-			Collection c = new MimeTypeHashSet((String [])o);
-			return this.containsAll(c);
+			String [] mimeTypes = (String [])o;
+			for(int i = 0; i < mimeTypes.length; i++) {
+				String [] parts = mimeTypes[i].split(",");
+				for(int j = 0; j < parts.length; j++) {
+					if(!contains(new MimeType(parts[j]))) {
+						return false;
+					}
+				}
+			}
+			return true;
 		}
-		return hashSet.contains(o);
+		return false;
 	}
 
 	/**
-	 * Checks that this MimeTypeHashSet contains this collection of MimeTypes
+	 * Checks that this Collection contains this collection of object that can represent mime types.
+	 * See the introduction to this class for a description of these types.
+	 * @param arg0 a collection of objects each of which can be a type that can represent a mime type
+	 * @ return true if this collection contains all of the elements in the specified collection.
+	 * @ throws NullPointerException if the passed in argument in null.
 	 */
 	public boolean containsAll(final Collection arg0) {
-		return hashSet.containsAll(arg0);
+		if(arg0 == null) {
+			throw new NullPointerException();
+		}
+		for(Iterator it = arg0.iterator(); it.hasNext();){
+			if(!contains(it.next())) {
+				return false;
+			}
+		}
+		return true;
 	}
 
+	/**
+	 * @see HashSet#isEmpty()
+	 */
 	public boolean isEmpty() {
 		return hashSet.isEmpty();
 	}
 
+	/**
+	 * @see HashSet#iterator()
+	 */
 	public Iterator iterator() {
 		return hashSet.iterator();
 	}
 
+	/**
+	 * Remove mime types from the collection. The parameter can be any type described in the introduction to this class.
+	 * @param o - Object to be removed
+	 * @return true if the set was modified.
+	 */
 	public boolean remove(final Object o) {
-		return hashSet.remove(o);
+		boolean removed = false;
+		if(o == null) {
+			return removed;
+		}
+		if(o instanceof MimeType) {
+			return hashSet.remove(o);
+		}else if(o instanceof String){
+			String [] parts = ((String)o).split(",");
+			for(int i = 0; i < parts.length; i++) {
+				if(remove(new MimeType(parts[i]))) {
+					removed = true;
+				}
+			}
+		}else if(o instanceof String []) {
+			String [] mimeTypes = (String [])o;
+			for(int i = 0; i < mimeTypes.length; i++) {
+				String [] parts = mimeTypes[i].split(",");
+				for(int j = 0; j < parts.length; j++) {
+					if(remove(new MimeType(parts[j]))) {
+						removed = true;
+					}
+				}
+			}
+		}else if(o instanceof Collection) {
+			return removeAll((Collection)o);
+		}
+		return removed;
 	}
 
+	/**
+	 * Remove all the items in the passed in Collection that can represent a mime type.
+	 * See the introduction of this class to see the types of objects the passed in collection can contain.
+	 * @return true if the set was modified.
+	 * @throws NullPointerException if the Collection passed in is null
+	 */
 	public boolean removeAll(final Collection arg0) {
-		return hashSet.removeAll(arg0);
+		if(arg0 == null) {
+			throw new NullPointerException();
+		}
+		boolean removed = false;
+		for(Iterator it = ((Collection)arg0).iterator(); it.hasNext();) {
+			if(remove(it.next())) {
+				removed = true;
+			}
+		}
+		return removed;
 	}
 
+	/**
+	 * Keep only the MimeType(s) in this collection that are also present in the passed in collection.
+	 * The passed in Collection is normalised into a MimeTypeHashSet before delegating down to the HashSet
+	 * retainAll(Collection) method.
+	 * @param arg0 - collection of types each of which can represent a mime type.
+	 * @ return true if this collection changed as a result of the call.
+	 */
 	public boolean retainAll(final Collection arg0) {
-		return hashSet.retainAll(arg0);
+		if(arg0 == null) {
+			throw new NullPointerException();
+		}
+		// Make sure our collection is a real collection of MimeType(s)
+		Collection c = new MimeTypeHashSet(arg0);
+		return hashSet.retainAll(c);
 	}
 
+	/**
+	 * @see HashSet#size()
+	 */
 	public int size() {
 		return hashSet.size();
 	}
 
+	/**
+	 * @see HashSet#toArray()
+	 */
 	public Object[] toArray() {
 		return hashSet.toArray();
 	}
 
+	/**
+	 * @see HashSet#add(Object)
+	 */
 	public Object[] toArray(final Object[] arg0) {
 		return hashSet.toArray(arg0);
 	}
 
 	/**
-	 * Create a String representation of this Collection as a comma seperated list
+	 * Create a String representation of this Collection as a comma separated list
 	 */
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
@@ -197,34 +373,27 @@ class MimeTypeHashSet implements Set, Collection {
 	}
 
 	/**
-	 * Checks if this MimeTypeHashSet is equal to i.e. contains ALL of
-	 * entries in the passed in argument.
-	 * @param o can be a String, String [] or Collection
-	 * @return true if this MimeTypeHashSet is the same size as the passed in
+	 * Compares the specified object with this set for equality. See the introduction of this class for a description of what this parameter can represent
+	 * @param o - Object to be compared for equality with this set.
+	 * @return true if the specified object is equal to this set.
 	 */
 	public boolean equals(final Object o) {
-		if(o instanceof MimeType) {
-			return match(new MimeTypeHashSet((MimeType)o));
-
-		}else if(o instanceof String) {
-			return match(new MimeTypeHashSet((String)o));
-		} else if(o instanceof String []) {
-			return match(new MimeTypeHashSet((String [])o));
-
-		}else if (o instanceof Collection) {
-			return match((Collection)o);
+		if(o == null) {
+			return false;
 		}
-		return false;
+		Collection c = new MimeTypeHashSet();
+		c.add(o);
+		return match(c);
 	}
 
 	private boolean match(final Collection c) {
 		if(this.size() != c.size()) {
 			return false;
 		}
-		MimeType [] mta = (MimeType[])c.toArray(new MimeType [c.size()]);
+		MimeType [] mt = (MimeType[])c.toArray(new MimeType [c.size()]);
 
-		for(int i = 0; i < mta.length; i++) {
-			if(!this.contains(mta[i])) {
+		for(int i = 0; i < mt.length; i++) {
+			if(!this.contains(mt[i])) {
 				return false;
 			}
 		}
@@ -250,7 +419,7 @@ class MimeTypeHashSet implements Set, Collection {
 		for(Iterator it = hashSet.iterator(); it.hasNext();) {
 			MimeType mt = (MimeType)it.next();
 			if(mt.equals(mimeType)) {
-				mt.setSpecificity(mt.getSpecificity() + 1);
+				mt.setSpecificity(mt.getSpecificity() + mimeType.getSpecificity());
 				return;
 			}
 		}
