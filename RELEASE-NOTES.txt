@@ -23,9 +23,34 @@
 
  This file contains the release notes of each version of mime-util
 
+
+ Version 1.3 Released xx-xx-2009
+
+ This version represents a major refactoring of mime-util with many new features and a more flexible architecture.
+ It will be the last version released in the 1.x branch. Some of the classes such as the MimeHandler are currently
+ experimental and are not well documented. These classes are subject to major change when we release version 2.x
+ and will have their API's pretty well defined.
+
+ 1. Depricated the eu.medsea.util.MimeUtil and eu.medsea.util.MimeException classes
+ 	These classes are still available but will not be supported any more. Please modify
+ 	your code to use the new eu.medsea.mimeutil.MimeUtil and eu.medsea.mimeutil.MimeException classes instead
+ 2. Added eu.medsea.mimeutil.MimeUtil to replace the depricated class
+ 3. Added eu.medsea.mimeutil.MimeException to replace the depricated class
+ 4. Added eu.medsea.mimeutil.MimeType class and eu.medsea.mimeutil.TextMimeType class to represent a mime types
+ 5. Added eu.medsea.mimeutil.MimeTypeHashSet to represent a Collection of mime types
+ 6. Added eu.medsea.mimeutil.detector.MimeDetect as an Abstract class to represent new plugable MimeDetector(s)
+ 7. Added eu.medsea.mimeutil.detector.ExtensionMimeDetect for detecting mime types from file extensions
+ 8. Added eu.medsea.mimeutil.detector.MagicMimeMimeDetector for detecting mime types from files, streams and URL,s
+ 	using magic number detection
+ 9. Added many new junit test cases to test the new methods
+ 10. Updated a lot of the java doc as well as the README.txt file
+
+
+
  Version 1.2 Released 27-01-2009
 
  1. This release has been restructured as a maven project
+
 
  Version 1.1 Released 21-01-2009
 

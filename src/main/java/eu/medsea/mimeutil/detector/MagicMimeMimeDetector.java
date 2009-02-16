@@ -64,6 +64,48 @@ import eu.medsea.mimeutil.MimeUtil;
  * rule by redefining the existing rule in one of the files listed above. This
  * is handy for some of the more sketchy rules defined in the existing Unix
  * magic.mime files.
+ * <p>
+ * We extended the string type rule which allows you to match strings in a file where you do not know the actual offset of the string containing magic
+ * file information it goes something like “what I am looking for will be ‘somewhere’ within the next n characters” from this location.
+ * This is an important improvement to the string matching rules especially for text based documents such as HTML and XML formats.
+ * The reasoning for this was that the rules for matching SVG images defined in the original 'magic.mime' file hardly ever worked, this is
+ * because of the fixed offset definitions within the magic rule format. As XML documents generally have an XML declaration that can
+ * contain various optional attributes the length of this header often cannot be determined, therefore we cannot know that the DOCTYPE
+ * declaration for an SVG xml file starts at “this” location, all we can say is that, if this is an SVG xml file then it will have an SVG DOCTYPE
+ * somewhere near the beginning of the file and probably within the first 1024 characters. So we test for the xml declaration and then we test for
+ * the DOCTYPE within a specified number of characters and if found then we match this rule. This extension can be used to better identify ALL of the
+ * XML type mime mappings in the current 'magic.mime' file. Remember though, as we stated earlier mime type matching using any of the mechanisms supported
+ * is not an exact science and should always be viewed as a 'best guess' and not as a 'definite match'.
+ * </p>
+ * <p>
+ * An example of overriding the PNG and SVG rules can be found in our internal 'magic.mime' file located in the test_files directory (this file is NOT used
+ * when locating rules and is used for testing purposes only).
+ * This PNG rule overrides the original PNG rule defined in the 'magic.mime' file we took from the Internet, and the SVG rule overrides the SVG detection also
+ * defined in the original 'magic.mime' file
+ * </p>
+ * <p>
+ * <pre>
+ * #PNG Image Format
+ * 0		string		\211PNG\r\n\032\n		image/png
+ *
+ * #SVG Image Format
+ * #	We know its an XML file so it should start with an XML declaration.
+ * 0	string	\<?xml\ version=	text/xml
+ * #	As the XML declaration in an XML file can be short or extended we cannot know
+ * #	exactly where the declaration ends i.e. how long it is,
+ * #	also it could be terminated by a new line(s) or a space(s).
+ * #	So the next line states that somewhere after the 15th character position we should find the DOCTYPE declaration.
+ * #	This DOCTYPE declaration should be within 1024 characters from the 15th character
+ * >15	string>1024<	\<!DOCTYPE\ svg\ PUBLIC\ "-//W3C//DTD\ SVG 	image/svg+xml
+ * </pre>
+ * </p>
+ * <p>
+ * As you can see the extension is defined using the syntax string>bufsize<. It can only be used on a string type and basically
+ * means match this within bufsize character from the position defined at the beginning of the line. This rule is much more verbose than
+ * required as we really only need to check for the presence of SVG. As we said earlier, this is a test case file and not used by the utility
+ * under normal circumstances.
+ *
+ * The test mime-types.properties and magic.mime files we use can be located in the test_files directory of this distribution.
  * </p>
  * <p>
  * We use the <code>application/directory</code> mime type to identify

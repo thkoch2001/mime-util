@@ -46,9 +46,20 @@ import eu.medsea.mimeutil.MimeUtil;
  * <code>-Dmime-mappings=../my-mime-types.properties</code></li>
  * </ol>
  * Each property file loaded will add to the list of extensions understood by MimeUtil.
- * If there is a clash of extension names then the last one loaded wins, this makes it
- * possible to completely change the mime types associated to a file extension
- * declared in previously loaded property files.
+ * If there is a clash of extension names then the last one loaded wins, i.e they are not adative, this makes it
+ * possible to completely change the mime types associated to a file extension declared in previously loaded property files.
+ * The extensions are also case sensitive meaning that bat, bAt, BAT and Bat can all be recognised individually. If however,
+ * no match is found using case sensitive matching then it will perform an insensitive match by lower casing the extension
+ * of the file to be matched first.
+ * </p>
+ * <p>
+ * Fortunately, we have compiled a relatively large list of mappings into a java properties file from information gleaned from many sites on the Internet.
+ * This file resides in the eu.medsea.util.mime-types.properties file and is not guaranteed to be correct or contain all the known mappings for a file
+ * extension type. This is not a complete or exhaustive list as that would have proven too difficult to compile for this project.
+ * So instead we give you the opportunity to extend and override these mappings for yourself as defined above.
+ * Obviously, to use this method you don't actually need a file object, you just need a file name with an extension. Also, if you have given or renamed a
+ * file using a different extension than the one that it would normally be associated with then this mapping will return the wrong mime-type and
+ * if the file has no extension at all, such as Make, then it's not going to be possible to determine a mime type using this technique
  * </p>
  * <p>
  * We acquired many mappings from many different sources on the net for the

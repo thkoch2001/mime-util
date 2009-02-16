@@ -16,8 +16,10 @@
 package eu.medsea.mimeutil;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
 
@@ -97,7 +99,7 @@ public class MimeTypeHashSetTest extends TestCase {
 		c.add("text/c,text/d,text/e");
 		assertTrue(c.size() == 5);
 
-		// Add a String array including an entry containing a comma seperated string
+		// Add a String array including an entry containing a comma separated string
 		c.add(new String [] {"text/f", "text/g,text/h"});
 		assertTrue(c.size() == 8);
 
@@ -116,6 +118,8 @@ public class MimeTypeHashSetTest extends TestCase {
 		// Test the boolean return value of the add
 		assertTrue(c.add(new MimeType("text/l")));
 		assertFalse(c.add(new MimeType("text/l")));
+
+		assertFalse(c.add(new Integer(10)));
 	}
 
 	public final void testAddAll() {
@@ -126,9 +130,16 @@ public class MimeTypeHashSetTest extends TestCase {
 		d.add(new MimeType("text/i"));
 		d.add(new String [] {"text/j", "text/k"});
 		d.add(new Integer(3)); // Should ignore this
-		c.addAll(d);
+
+		// The collection should be modified
+		assertTrue(c.addAll(d));
+
+		// The collection should not be modified as we have already added all these types
+		assertFalse(c.addAll(d));
 
 		assertTrue(c.size() == 3);
+
+		// Test addAll boolean return types
 	}
 
 	public final void testClear() {
@@ -173,6 +184,8 @@ public class MimeTypeHashSetTest extends TestCase {
 		d.remove(i);
 		assertTrue(c.contains(d));
 
+		assertFalse(c.contains("abc/xyz"));
+
 	}
 
 	public final void testContainsAll() {
@@ -185,6 +198,10 @@ public class MimeTypeHashSetTest extends TestCase {
 		c.addAll(d);
 
 		assertTrue(c.containsAll(d));
+
+		d.add("abc/xyz");
+
+		assertFalse(c.containsAll(d));
 	}
 
 	public final void testRemove() {
@@ -288,5 +305,46 @@ public class MimeTypeHashSetTest extends TestCase {
 			// This will get thrown by the add method above as String and MimeType cannot be compared
 			// naturally.
 		}
+	}
+
+	public void testToString() {
+		Collection c = new MimeTypeHashSet();
+
+		c.add(new MimeType("text/x"));
+		c.add(new String [] {"text/j", "text/b, text/l,text/m"});
+		c.add("text/n,text/a");
+
+		// Check that the collection maintains insertion order
+		assertEquals(c.toString(), "text/x,text/j,text/b,text/l,text/m,text/n,text/a");
+	}
+
+	public void testMatches() {
+		MimeTypeHashSet c = new MimeTypeHashSet();
+
+		c.add(new MimeType("text/x"));
+		c.add(new String [] {"text/j", "text/b, text/l,text/m"});
+		c.add("text/n,text/a");
+		c.add("application/n,application/a");
+		c.add("abc/def,application/pdf,application/x-pdf-something");
+		c.add("xyz/abc");
+
+		Collection d = c.matches(".*abc.*");
+		assertTrue(d.size() == 2);
+		assertEquals(d.toString(), "abc/def,xyz/abc");
+
+		d = c.matches("text/.*");
+		assertTrue(d.size() == 7);
+
+		d = c.matches(".*pdf.*");
+		assertTrue(d.size() == 2);
+		assertEquals(d.toString(), "application/pdf,application/x-pdf-something");
+	}
+
+
+	public void testSyncronised() {
+
+		// Use this form for a Syncronised collection
+	     Collection c = Collections.synchronizedSet(new MimeTypeHashSet("text/a,text/b,text/c,text/d"));
+
 	}
 }

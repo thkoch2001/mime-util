@@ -248,12 +248,11 @@ public class MimeUtil {
 	/**
 	 * Get the first in a comma separated list of mime types. Useful when using
 	 * extension mapping that can return multiple mime types separate by commas
-	 * and you only want the first one. Will return UNKNOWN_MIME_TYPE if the
-	 * passed in list is null or empty.
+	 * and you only want the first one.
 	 *
 	 * @param mimeTypes
 	 *            comma separated list of mime types
-	 * @return the first in a comma separated list of mime types
+	 * @return first in a comma separated list of mime types or null if the mimeTypes string is null or empty
 	 */
 	public static MimeType getFirstMimeType(final String mimeTypes) {
 		if (mimeTypes != null && mimeTypes.trim().length() != 0) {
@@ -349,7 +348,7 @@ public class MimeUtil {
 	 * normalised list of all matching mime types. If no matching mime types are found the returned
 	 * Collection will contain the default UNKNOWN_MIME_TYPE
 	 * @param file the File object to detect.
-	 * @return
+	 * @return collection of matching MimeType(s)
 	 * @throws MimeException if there are problems such as reading files generated when the MimeHandler(s)
 	 * executed.
 	 */
@@ -421,7 +420,7 @@ public class MimeUtil {
 	 * normalised list of all matching mime types. If no matching mime types are found the returned
 	 * Collection will contain the default UNKNOWN_MIME_TYPE
 	 * @param fileName the name of a file to detect.
-	 * @return
+	 * @return collection of matching MimeType(s)
 	 * @throws MimeException if there are problems such as reading files generated when the MimeHandler(s)
 	 * executed.
 	 */
@@ -456,7 +455,7 @@ public class MimeUtil {
 	 * normalised list of all matching mime types. If no matching mime types are found the returned
 	 * Collection will contain the default UNKNOWN_MIME_TYPE
 	 * @param url a URL to detect.
-	 * @return
+	 * @return collection of matching MimeType(s)
 	 * @throws MimeException if there are problems such as reading files generated when the MimeHandler(s)
 	 * executed.
 	 */

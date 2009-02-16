@@ -18,13 +18,14 @@ package eu.medsea.mimeutil;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
  * This class is used to represent a collection of <code>MimeType</code> objects.
  * <p>
- * It uses a {@link HashSet} as the backing collection and implements all
- * methods of both the {@link Set} and {@link Collection} interfaces.
+ * It uses a {@link LinkedHashSet} as the backing collection and implements all
+ * methods of both the {@link Set} and {@link Collection} interfaces and maintains the list in insertion order.
  * </p>
  * <p>
  * This class is pretty tolerant of the parameter type that can be passed to methods that
@@ -43,12 +44,23 @@ import java.util.Set;
  * If an object is passed that is not one of these types the method will throw a MimeException unless the method returns a
  * boolean in which case it will return false.
  * </p>
+ * <p>
+ * Note that this implementation is not synchronized. If multiple threads access a set concurrently, and at least one of the threads modifies the set,
+ * it must be synchronized externally. This is typically accomplished by synchronizing on some object that naturally encapsulates the set.
+ * If no such object exists, the set should be "wrapped" using the Collections.synchronizedSet method. This is best done at creation time,
+ * to prevent accidental unsynchronized access to the HashSet  instance:
+ * <ul>
+ * <li><code>Set s = Collections.synchronizedSet(new MimeTypeHashSet(...));</code></li>
+ * <li><code>Collection c = Collections.synchronizedSet(new MimeTypeHashSet(...));</code></li>
+ * </ul>
+ * @see LinkedHashSet for a description of the way the Iterator works with regard to the fail-fast functionality.
+ * </p>
  * @author Steven McArdle
  *
  */
 class MimeTypeHashSet implements Set, Collection {
 
-	private HashSet hashSet = new HashSet();
+	private Set hashSet = new LinkedHashSet();
 
 	MimeTypeHashSet() {}
 
@@ -62,7 +74,7 @@ class MimeTypeHashSet implements Set, Collection {
 	}
 
 	/**
-	 * @see HashSet#HashSet(int)
+	 * @see LinkedHashSet#HashSet(int)
 	 * @param initialCapacity
 	 */
 	MimeTypeHashSet(final int initialCapacity) {
@@ -70,7 +82,7 @@ class MimeTypeHashSet implements Set, Collection {
 	}
 
 	/**
-	 * @see HashSet#HashSet(int, float)
+	 * @see LinkedHashSet#HashSet(int, float)
 	 * @param initialCapacity
 	 * @param loadFactor
 	 */
@@ -195,7 +207,7 @@ class MimeTypeHashSet implements Set, Collection {
 	}
 
 	/**
-	 * @see HashSet#clear()
+	 * @see LinkedHashSet#clear()
 	 */
 	public void clear() {
 		hashSet.clear();
@@ -254,14 +266,14 @@ class MimeTypeHashSet implements Set, Collection {
 	}
 
 	/**
-	 * @see HashSet#isEmpty()
+	 * @see LinkedHashSet#isEmpty()
 	 */
 	public boolean isEmpty() {
 		return hashSet.isEmpty();
 	}
 
 	/**
-	 * @see HashSet#iterator()
+	 * @see LinkedHashSet#iterator()
 	 */
 	public Iterator iterator() {
 		return hashSet.iterator();
@@ -338,21 +350,21 @@ class MimeTypeHashSet implements Set, Collection {
 	}
 
 	/**
-	 * @see HashSet#size()
+	 * @see LinkedHashSet#size()
 	 */
 	public int size() {
 		return hashSet.size();
 	}
 
 	/**
-	 * @see HashSet#toArray()
+	 * @see LinkedHashSet#toArray()
 	 */
 	public Object[] toArray() {
 		return hashSet.toArray();
 	}
 
 	/**
-	 * @see HashSet#add(Object)
+	 * @see LinkedHashSet#add(Object)
 	 */
 	public Object[] toArray(final Object[] arg0) {
 		return hashSet.toArray(arg0);
@@ -423,5 +435,31 @@ class MimeTypeHashSet implements Set, Collection {
 				return;
 			}
 		}
+	}
+
+	/*
+	 * The following functions are extensions to the Collection and Set interfaces
+	 * implemented by this class and require the Collection to be cast to a MimeTypeHashSet
+	 * before they can be accessed.
+	 */
+
+
+	/**
+	 * Return a sub collection from this collection containing all MimeType(s) that match the
+	 * pattern passed in. The pattern can be any pattern supported by the {@Link Pattern} class.
+	 * @param pattern to match against the collection of MimeType(s)
+	 * @return Collection of matching MimeType(s) or an empty set if no matches found
+	 * @see String#matches(String) for a full description of the regular expression matching
+	 */
+	public Collection matches(String pattern) {
+		Collection c = new MimeTypeHashSet();
+
+		for(Iterator it = iterator(); it.hasNext();) {
+			MimeType mimeType = (MimeType)it.next();
+			if(mimeType.toString().matches(pattern)) {
+				c.add(mimeType);
+			}
+		}
+		return c;
 	}
 }
