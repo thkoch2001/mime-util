@@ -869,15 +869,17 @@ class MimeUtilMimeDetectorRegistry {
 	Collection getMimeTypes(final byte [] data, final MimeType unknownMimeType) throws MimeException
 	{
 		Collection mimeTypes = new MimeTypeHashSet();
-		for(Iterator it  = mimeDetectors.values().iterator();it.hasNext();) {
-			try {
-				MimeDetector md = (MimeDetector)it.next();
-				mimeTypes.addAll(md.getMimeTypes(data));
-			}catch(UnsupportedOperationException usoe) {
-				// We ignore this as it indicates that this MimeDetector does not support
-				// Getting mime types from files
-			}catch(Exception e) {
-				log.error(e, e);
+		if(data != null) {
+			for(Iterator it  = mimeDetectors.values().iterator();it.hasNext();) {
+				try {
+					MimeDetector md = (MimeDetector)it.next();
+					mimeTypes.addAll(md.getMimeTypes(data));
+				}catch(UnsupportedOperationException usoe) {
+					// We ignore this as it indicates that this MimeDetector does not support
+					// Getting mime types from files
+				}catch(Exception e) {
+					log.error(e, e);
+				}
 			}
 		}
 		if(mimeTypes.isEmpty()) {

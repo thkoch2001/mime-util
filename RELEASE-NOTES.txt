@@ -24,12 +24,12 @@
  This file contains the release notes of each version of mime-util
 
 
- Version 1.3 Released xx-xx-2009
+ Version 1.3 Released 04-03-2009
 
  This version represents a major refactoring of mime-util with many new features and a more flexible architecture.
  It will be the last version released in the 1.x branch. Some of the classes such as the MimeHandler are currently
  experimental and are not well documented. These classes are subject to major change when we release version 2.x
- and will have their API's pretty well defined.
+ and will have their API's pretty well defined then.
 
  1. Depricated the eu.medsea.util.MimeUtil and eu.medsea.util.MimeException classes
  	These classes are still available but will not be supported any more. Please modify
@@ -42,9 +42,26 @@
  7. Added eu.medsea.mimeutil.detector.ExtensionMimeDetect for detecting mime types from file extensions
  8. Added eu.medsea.mimeutil.detector.MagicMimeMimeDetector for detecting mime types from files, streams and URL,s
  	using magic number detection
- 9. Added many new junit test cases to test the new methods
- 10. Updated a lot of the java doc as well as the README.txt file
+ 9. Added eu.medsea.mimeutil.detector.OpendesktopMimeDetector for detecting mime types using the Opendesktop
+ 	Shared MIME database see - http://standards.freedesktop.org/shared-mime-info-spec/shared-mime-info-spec-latest.html
+ 	This class is disabled by default. To enable this and register it as a listener you can just create an instance of the
+ 	class eu.medsea.mimeutil.detector.OpendesktopMimeDetector and a static block in the class will automatically register it.
+ 10. Added many new junit test cases to test the new methods and classes
+ 11. Updated a lot of the java doc as well as the README.txt file
 
+NOTE: The default MimeDetector(s) MagicMimeMimeDetector and ExtensionMimeDetector are enabled by default and will cover 99.9% of
+use cases. If however, you are running on a Linux system that supports the OpenDesktop Shared MIME database you should probably
+deregister the MagicMimeMimeDetector and the ExtensionMimeDetector and enable the OpendesktopMimeDetector. This is because there
+is a considerable overlap with the other default MimeDetector(s) and you will have a more consistent result with other applications
+running on the system.
+
+There are no problems caused by having ALL of the MimeDetector(s) active at the same time, you will just get more mime types
+returned from the MimeUtil.getMimeTypes(...) calls.
+
+You can enable the OpendesktopMimeDetector by un-commenting the entry in the MimeDetectors file in the root of the jar file.
+If you are running this MimeDetector on a system that does not support the mime.cache file, such as windows, you can extract it
+from the jar and place it in a directory called /usr/share/mime/mime.cache. This file cannot be used directly from the jar file
+as it is used as a memory mapped file that must be located on the file system.
 
 
  Version 1.2 Released 27-01-2009
