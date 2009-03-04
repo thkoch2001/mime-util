@@ -99,13 +99,27 @@ public abstract class MimeDetector {
 	}
 
 	/**
+	 * This method is called by the MimeUtil getMimeTypes(byte []) method via the MimeUtil.MimeUtilMimeDetectorRegistry class.
+	 * @param data
+	 * @return collection of matched MimeType(s) from the specific MimeDetector getMimeTypesByteArray(...) abstract method.
+	 */
+	public final Collection getMimeTypes(final byte [] data) {
+		return fireMimeHandlers(getMimeTypesByteArray(data));
+	}
+
+	/**
 	 * This method is called by the MimeUtil getMimeTypes(URLConnection) method via the MimeUtil.MimeUtilMimeDetectorRegistry class.
 	 * @param url
 	 * @return collection of matched MimeType(s) from the specific MimeDetector getMimeTypesInputStream(...) abstract method.
 	 */
 	public final Collection getMimeTypes(final URLConnection url) {
 		try {
-			return fireMimeHandlers(getMimeTypesInputStream(new BufferedInputStream(url.getInputStream())));
+			Collection mimeTypes = fireMimeHandlers(getMimeTypesInputStream(new BufferedInputStream(url.getInputStream())));
+			if(mimeTypes.isEmpty()) {
+				// If no mime types are returned try to get the mime type from the URLConnection
+				mimeTypes.add(url.getContentType());
+			}
+			return mimeTypes; 
 		} catch (IOException e) {
 			throw new MimeException(e);
 		}
@@ -167,6 +181,18 @@ public abstract class MimeDetector {
 	 * @throws UnsupportedOperationException
 	 */
 	public abstract Collection getMimeTypesInputStream(final InputStream in) throws UnsupportedOperationException;
+
+	/**
+	 * Abstract method that must be implemented by concrete MimeDetector(s). This takes a byte [] object and is
+	 * called by the MimeUtil getMimeTypes(byte []) method.
+	 * If your MimeDetector does not handle byte [] objects then either throw an UnsupportedOperationException or return an
+	 * empty collection.
+	 *
+	 * @param data byte []. Is a byte array that you want to parse for matching mime types.
+	 * @return collection of matched MimeType(s)
+	 * @throws UnsupportedOperationException
+	 */
+	public abstract Collection getMimeTypesByteArray(final byte [] data) throws UnsupportedOperationException;
 }
 
 

@@ -3,6 +3,7 @@ package eu.medsea.mimeutil;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.Collection;
 
 import eu.medsea.mimeutil.MimeException;
@@ -103,6 +104,32 @@ public class MimeUtilTest extends TestCase {
 		assertTrue(MimeUtil.getMimeTypes("src/test/resources/e.xml").contains("text/xml, application/xml"));
 		assertTrue(MimeUtil.getMimeTypes("a.de").equals(UNKNOWN_MIME_TYPE_COLLECTION));
 		assertTrue(MimeUtil.getMimeTypes("src/test/resources/d-png.img").contains("image/png"));
+
+	}
+
+	public void testGetMimeTypesAsByteArray() {
+		String fileName = "src/test/resources/e-svg.img";
+
+		byte [] data = null;
+
+		try {
+			assertTrue(MimeUtil.getMimeTypes(data).equals(UNKNOWN_MIME_TYPE_COLLECTION));
+			InputStream in = new FileInputStream(fileName);
+			data = new byte [255];
+			in.read(data, 0, 255);
+			in.close();
+			// The amount of data we read is to small to match the image/svg+xml rule
+			Collection mimeTypes = MimeUtil.getMimeTypes(data);
+			assertFalse(mimeTypes.contains("image/svg+xml"));
+			in = new FileInputStream(fileName);
+			// This is the minimum amount of data we need to read due to the between rule for the image/svg+xml
+			data = new byte [1024];
+			in.read(data, 0, 1024);
+			in.close();
+			assertTrue(MimeUtil.getMimeTypes(data).contains("image/svg+xml"));
+		}catch(Exception e) {
+			fail("Should not get here");
+		}
 
 	}
 

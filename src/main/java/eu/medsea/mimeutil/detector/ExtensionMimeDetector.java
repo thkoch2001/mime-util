@@ -268,4 +268,14 @@ public class ExtensionMimeDetector extends MimeDetector {
 			throws UnsupportedOperationException {
 		throw new UnsupportedOperationException("This MimeDetector does not support detection from streams.");
 	}
+
+	/**
+	 * This method is required by the abstract MimeDetector class. As we do not support extension mapping of byte arrays
+	 * we just throw an {@link UnsupportedOperationException}. This ensures that the getMimeTypes(...) methods ignore this
+	 * method. We could also have just returned an empty collection.
+	 */
+	public Collection getMimeTypesByteArray(byte[] data)
+			throws UnsupportedOperationException {
+		throw new UnsupportedOperationException("This MimeDetector does not support detection from byte arrays.");
+	}
 }

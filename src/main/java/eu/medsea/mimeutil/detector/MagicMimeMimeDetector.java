@@ -50,62 +50,76 @@ import eu.medsea.mimeutil.MimeUtil;
  * <li>From the normal Unix locations <code>/usr/share/file/magic.mime</code>
  * and <code>/etc/magic.mime</code> (in that order)</li>
  * <li>From the internal <code>magic.mime</code> file
- * <code>eu.medsea.mimeutil.magic.mime</code> if, and only if, no files are located
- * in step 4 above.</li>
+ * <code>eu.medsea.mimeutil.magic.mime</code> if, and only if, no files are
+ * located in step 4 above.</li>
  * </ol>
  * Each rule file is appended to the end of the existing rules so the earlier in
  * the sequence you define a rule means this will take precedence over rules
- * loaded later.
+ * loaded later. </p>
+ * <p>
+ * You can add new mime mapping rules using the syntax defined for the Unix
+ * magic.mime file by placing these rules in any of the files or locations
+ * listed above. You can also change an existing mapping rule by redefining the
+ * existing rule in one of the files listed above. This is handy for some of the
+ * more sketchy rules defined in the existing Unix magic.mime files.
+ * <p>
+ * We extended the string type rule which allows you to match strings in a file
+ * where you do not know the actual offset of the string containing magic file
+ * information it goes something like “what I am looking for will be ‘somewhere’
+ * within the next n characters” from this location. This is an important
+ * improvement to the string matching rules especially for text based documents
+ * such as HTML and XML formats. The reasoning for this was that the rules for
+ * matching SVG images defined in the original 'magic.mime' file hardly ever
+ * worked, this is because of the fixed offset definitions within the magic rule
+ * format. As XML documents generally have an XML declaration that can contain
+ * various optional attributes the length of this header often cannot be
+ * determined, therefore we cannot know that the DOCTYPE declaration for an SVG
+ * xml file starts at “this” location, all we can say is that, if this is an SVG
+ * xml file then it will have an SVG DOCTYPE somewhere near the beginning of the
+ * file and probably within the first 1024 characters. So we test for the xml
+ * declaration and then we test for the DOCTYPE within a specified number of
+ * characters and if found then we match this rule. This extension can be used
+ * to better identify ALL of the XML type mime mappings in the current
+ * 'magic.mime' file. Remember though, as we stated earlier mime type matching
+ * using any of the mechanisms supported is not an exact science and should
+ * always be viewed as a 'best guess' and not as a 'definite match'.
  * </p>
  * <p>
- * You can add new mime mapping rules using the
- * syntax defined for the Unix magic.mime file by placing these rules in any of
- * the files or locations listed above. You can also change an existing mapping
- * rule by redefining the existing rule in one of the files listed above. This
- * is handy for some of the more sketchy rules defined in the existing Unix
- * magic.mime files.
- * <p>
- * We extended the string type rule which allows you to match strings in a file where you do not know the actual offset of the string containing magic
- * file information it goes something like “what I am looking for will be ‘somewhere’ within the next n characters” from this location.
- * This is an important improvement to the string matching rules especially for text based documents such as HTML and XML formats.
- * The reasoning for this was that the rules for matching SVG images defined in the original 'magic.mime' file hardly ever worked, this is
- * because of the fixed offset definitions within the magic rule format. As XML documents generally have an XML declaration that can
- * contain various optional attributes the length of this header often cannot be determined, therefore we cannot know that the DOCTYPE
- * declaration for an SVG xml file starts at “this” location, all we can say is that, if this is an SVG xml file then it will have an SVG DOCTYPE
- * somewhere near the beginning of the file and probably within the first 1024 characters. So we test for the xml declaration and then we test for
- * the DOCTYPE within a specified number of characters and if found then we match this rule. This extension can be used to better identify ALL of the
- * XML type mime mappings in the current 'magic.mime' file. Remember though, as we stated earlier mime type matching using any of the mechanisms supported
- * is not an exact science and should always be viewed as a 'best guess' and not as a 'definite match'.
+ * An example of overriding the PNG and SVG rules can be found in our internal
+ * 'magic.mime' file located in the test_files directory (this file is NOT used
+ * when locating rules and is used for testing purposes only). This PNG rule
+ * overrides the original PNG rule defined in the 'magic.mime' file we took from
+ * the Internet, and the SVG rule overrides the SVG detection also defined in
+ * the original 'magic.mime' file
  * </p>
  * <p>
- * An example of overriding the PNG and SVG rules can be found in our internal 'magic.mime' file located in the test_files directory (this file is NOT used
- * when locating rules and is used for testing purposes only).
- * This PNG rule overrides the original PNG rule defined in the 'magic.mime' file we took from the Internet, and the SVG rule overrides the SVG detection also
- * defined in the original 'magic.mime' file
- * </p>
- * <p>
+ *
  * <pre>
  * #PNG Image Format
  * 0		string		\211PNG\r\n\032\n		image/png
  *
  * #SVG Image Format
  * #	We know its an XML file so it should start with an XML declaration.
- * 0	string	\<?xml\ version=	text/xml
+ * 0	string	\&lt;?xml\ version=	text/xml
  * #	As the XML declaration in an XML file can be short or extended we cannot know
  * #	exactly where the declaration ends i.e. how long it is,
  * #	also it could be terminated by a new line(s) or a space(s).
  * #	So the next line states that somewhere after the 15th character position we should find the DOCTYPE declaration.
  * #	This DOCTYPE declaration should be within 1024 characters from the 15th character
- * >15	string>1024<	\<!DOCTYPE\ svg\ PUBLIC\ "-//W3C//DTD\ SVG 	image/svg+xml
+ * &gt;15	string&gt;1024&lt;	\&lt;!DOCTYPE\ svg\ PUBLIC\ &quot;-//W3C//DTD\ SVG 	image/svg+xml
  * </pre>
+ *
  * </p>
  * <p>
- * As you can see the extension is defined using the syntax string>bufsize<. It can only be used on a string type and basically
- * means match this within bufsize character from the position defined at the beginning of the line. This rule is much more verbose than
- * required as we really only need to check for the presence of SVG. As we said earlier, this is a test case file and not used by the utility
- * under normal circumstances.
+ * As you can see the extension is defined using the syntax string>bufsize<. It
+ * can only be used on a string type and basically means match this within
+ * bufsize character from the position defined at the beginning of the line.
+ * This rule is much more verbose than required as we really only need to check
+ * for the presence of SVG. As we said earlier, this is a test case file and not
+ * used by the utility under normal circumstances.
  *
- * The test mime-types.properties and magic.mime files we use can be located in the test_files directory of this distribution.
+ * The test mime-types.properties and magic.mime files we use can be located in
+ * the test_files directory of this distribution.
  * </p>
  * <p>
  * We use the <code>application/directory</code> mime type to identify
@@ -114,9 +128,10 @@ import eu.medsea.mimeutil.MimeUtil;
  * for us to use as well.
  * </p>
  * <p>
- * This class is auto loaded by MimeUtil as it has an entry in the file called MimeDetectors.
- * MimeUtil reads this file at startup and calls Class.forName() on each entry found. This mean
- * the MimeDetector must have a no arg constructor.
+ * This class is auto loaded by MimeUtil as it has an entry in the file called
+ * MimeDetectors. MimeUtil reads this file at startup and calls Class.forName()
+ * on each entry found. This mean the MimeDetector must have a no arg
+ * constructor.
  * </p>
  *
  * @author Steven McArdle.
@@ -126,11 +141,10 @@ public class MagicMimeMimeDetector extends MimeDetector {
 
 	private static Log log = LogFactory.getLog(MagicMimeMimeDetector.class);
 
-	private static String [] defaultLocations = {
-		"/usr/share/mimelnk/magic",
-		"/usr/share/file/magic.mime",
-		"/etc/magic.mime" };
-	private static List magicMimeFileLocations = Arrays.asList(defaultLocations);
+	private static String[] defaultLocations = { "/usr/share/mimelnk/magic",
+			"/usr/share/file/magic.mime", "/etc/magic.mime" };
+	private static List magicMimeFileLocations = Arrays
+			.asList(defaultLocations);
 
 	private static ArrayList mMagicMimeEntries = new ArrayList();
 
@@ -140,14 +154,40 @@ public class MagicMimeMimeDetector extends MimeDetector {
 		MimeUtil.addMimeDetector(new MagicMimeMimeDetector());
 	}
 
-	public MagicMimeMimeDetector() {}
+	public MagicMimeMimeDetector() {
+	}
 
 	public String getDescription() {
 		return "Get the mime types of files or streams using the Unix file(5) magic.mime files";
 	}
 
 	/**
-	 * Get the mime type of the data in the specified {@link InputStream}.
+	 * Get the mime types that may be contained in the data array.
+	 *
+	 * @param data. The byte array that contains data we want to detect mime types from.
+	 * @return the mime types.
+	 * @throws MimeException if for instance we try to match beyond the end of the data.
+	 */
+	public Collection getMimeTypesByteArray(final byte[] data)
+			throws MimeException {
+		Collection mimeTypes = new HashSet();
+		int len = mMagicMimeEntries.size();
+		try {
+			for (int i = 0; i < len; i++) {
+				MagicMimeEntry me = (MagicMimeEntry) mMagicMimeEntries.get(i);
+				MagicMimeEntry matchingMagicMimeEntry = me.getMatch(data);
+				if (matchingMagicMimeEntry != null) {
+					mimeTypes.add(matchingMagicMimeEntry.getMimeType());
+				}
+			}
+		} catch (Exception e) {
+			log.error(e.getMessage(), e);
+		}
+		return mimeTypes;
+	}
+
+	/**
+	 * Get the mime types of the data in the specified {@link InputStream}.
 	 * Therefore, the <code>InputStream</code> must support mark and reset (see
 	 * {@link InputStream#markSupported()}). If it does not support mark and
 	 * reset, an {@link MimeException} is thrown.
@@ -159,7 +199,8 @@ public class MagicMimeMimeDetector extends MimeDetector {
 	 *             if the specified <code>InputStream</code> does not support
 	 *             mark and reset (see {@link InputStream#markSupported()}).
 	 */
-	public Collection getMimeTypesInputStream(final InputStream in) throws MimeException {
+	public Collection getMimeTypesInputStream(final InputStream in)
+			throws MimeException {
 		Collection mimeTypes = new HashSet();
 		int len = mMagicMimeEntries.size();
 		try {
@@ -177,8 +218,8 @@ public class MagicMimeMimeDetector extends MimeDetector {
 	}
 
 	/**
-	 * Try to get the mime types of a file using the <code>magic.mime</code> rules
-	 * files.
+	 * Try to get the mime types of a file using the <code>magic.mime</code>
+	 * rules files.
 	 *
 	 * @param file
 	 *            is a {@link File} object that points to a file or directory.
@@ -221,7 +262,6 @@ public class MagicMimeMimeDetector extends MimeDetector {
 		}
 		return mimeTypes;
 	}
-
 
 	/*
 	 * This loads the magic.mime file rules into the internal parse tree in the
@@ -364,8 +404,10 @@ public class MagicMimeMimeDetector extends MimeDetector {
 				}
 			}
 		} catch (Exception e) {
-			log.error(
-				"Failed to parse magic.mime file from directory located by environment variable MAGIC. File will be ignored.", e);
+			log
+					.error(
+							"Failed to parse magic.mime file from directory located by environment variable MAGIC. File will be ignored.",
+							e);
 		}
 
 		// Parse the UNIX magic(5) magic.mime files. Since there can be
@@ -376,8 +418,8 @@ public class MagicMimeMimeDetector extends MimeDetector {
 
 		int mMagicMimeEntriesSizeBeforeReadingOS = mMagicMimeEntries.size();
 		Iterator it = magicMimeFileLocations.iterator();
-		while(it.hasNext()) {
-			parseMagicMimeFileLocation((String)it.next());
+		while (it.hasNext()) {
+			parseMagicMimeFileLocation((String) it.next());
 		}
 
 		if (mMagicMimeEntriesSizeBeforeReadingOS == mMagicMimeEntries.size()) {
@@ -477,7 +519,8 @@ public class MagicMimeMimeDetector extends MimeDetector {
 	}
 
 	// Parse the magic.mime file
-	private static void parse(final String magicFile, final Reader r) throws IOException {
+	private static void parse(final String magicFile, final Reader r)
+			throws IOException {
 		long start = System.currentTimeMillis();
 
 		BufferedReader br = new BufferedReader(r);

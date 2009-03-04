@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.URLConnection;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import eu.medsea.mimeutil.detector.MimeDetector;
+import eu.medsea.util.StringUtil;
 
 /**
  * <p>
@@ -340,6 +342,35 @@ public class MimeUtil {
 	 */
 	public static MimeDetector getMimeDetector(final String name) {
 		return mimeUtilMimeDetector.getMimeDetector(name);
+	}
+
+	/**
+	 * TODO: Add description
+	 * @param data
+	 * @return
+	 * @throws MimeException
+	 */
+	public static Collection getMimeTypes(final byte [] data) throws MimeException
+	{
+		return getMimeTypes(data, UNKNOWN_MIME_TYPE);
+	}
+
+	/**
+	 * TODO: Add desription
+	 * @param data
+	 * @param unknownMimeType
+	 * @throws MimeException
+	 */
+	public static Collection getMimeTypes(final byte [] data, final MimeType unknownMimeType) throws MimeException
+	{
+		if(log.isDebugEnabled()) {
+			try {
+			log.debug("Getting mime types for byte array [" + StringUtil.getHexString(data)+ "].");
+			}catch(UnsupportedEncodingException uee) {
+				throw new MimeException(uee);
+			}
+		}
+		return mimeUtilMimeDetector.getMimeTypes(data, unknownMimeType);
 	}
 
 	/**
@@ -835,6 +866,29 @@ class MimeUtilMimeDetectorRegistry {
 		return (MimeDetector)mimeDetectors.get(name);
 	}
 
+	Collection getMimeTypes(final byte [] data, final MimeType unknownMimeType) throws MimeException
+	{
+		Collection mimeTypes = new MimeTypeHashSet();
+		for(Iterator it  = mimeDetectors.values().iterator();it.hasNext();) {
+			try {
+				MimeDetector md = (MimeDetector)it.next();
+				mimeTypes.addAll(md.getMimeTypes(data));
+			}catch(UnsupportedOperationException usoe) {
+				// We ignore this as it indicates that this MimeDetector does not support
+				// Getting mime types from files
+			}catch(Exception e) {
+				log.error(e, e);
+			}
+		}
+		if(mimeTypes.isEmpty()) {
+			mimeTypes.add(unknownMimeType);
+		}
+		if(log.isDebugEnabled()) {
+			log.debug("Retrieved mime types [" + mimeTypes.toString() + "]");
+		}
+		return mimeTypes;
+	}
+
 	Collection getMimeTypes(final File file, final MimeType unknownMimeType) throws MimeException
 	{
 		Collection mimeTypes = new MimeTypeHashSet();
@@ -906,10 +960,14 @@ class MimeUtilMimeDetectorRegistry {
 
 
 	MimeDetector removeMimeDetector(final MimeDetector mimeDetector) {
+		if(mimeDetector == null) {
+			log.error("Cannot remove NULL from MimeDetector registry.");
+			return null;
+		}
 		if(log.isDebugEnabled()) {
 			log.debug("Removing MimeDetector [" + mimeDetector.getName() + "] from registry.");
 		}
-		return (MimeDetector)mimeDetectors.remove(mimeDetector);
+		return (MimeDetector)mimeDetectors.remove(mimeDetector.getName());
 	}
 
 }
