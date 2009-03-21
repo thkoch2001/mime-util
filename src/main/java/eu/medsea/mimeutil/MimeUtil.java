@@ -834,6 +834,22 @@ public class MimeUtil {
 		}
 		return map;
 	}
+
+	/**
+	 * Allow to determine the mime types of a files from the command line.
+	 * Only uses the the ExtensionMimeDetector and MagicMimeMimeDetector
+	 * @param args pass in the name(s) of 1 or more file(s) to determine the mime types for
+	 */
+	public static void main(String [] args) {
+		if(args.length != 1) {
+			System.out.println("java -jar mime-util-<version>.jar <file> [<file> ...]");
+			System.exit(-1);
+		}
+		for(int i = 0; i < args.length; i++) {
+			File f = new File(args[i]);
+			System.out.println("File:[" + f.getAbsolutePath() + "] - " + MimeUtil.getMimeTypes(args[i]));
+		}
+	}
 }
 
 /**
