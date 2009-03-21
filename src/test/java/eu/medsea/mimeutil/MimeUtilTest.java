@@ -41,6 +41,7 @@ public class MimeUtilTest extends TestCase {
 		String fileName = "src/test/resources/e.xml";
 
 		try {
+			assertFalse(MimeUtil.getMimeTypes(new File("src/test/resources/test.bin")).equals(MimeUtil.getMimeTypes(new BufferedInputStream(new FileInputStream("src/test/resources/test.bin")))));
 			assertFalse(MimeUtil.getMimeTypes(new File(fileName)).equals(MimeUtil.getMimeTypes(new BufferedInputStream(new FileInputStream(fileName)))));
 		}catch(Exception e) {
 			fail("Should not get here");
@@ -101,6 +102,11 @@ public class MimeUtilTest extends TestCase {
 
 		assertTrue(MimeUtil.getMimeTypes("src/test/resources/e.xml").contains("application/xml"));
 		assertTrue(MimeUtil.getMimeTypes("a.de").equals(UNKNOWN_MIME_TYPE_COLLECTION));
+
+		// Test for multiple extensions
+		assertTrue(MimeUtil.getMimeTypes("e.1.3.jar").contains("application/java-archive"));
+
+
 		// The following fails to detect using the OpendesktopMimeDetector
 		//assertTrue(MimeUtil.getMimeTypes("src/test/resources/d-png.img").contains("image/png"));
 	}
@@ -137,6 +143,10 @@ public class MimeUtilTest extends TestCase {
 		// Find by extension first
 		assertTrue(MimeUtil.getMimeTypes(new File("src/test/resources/e.xml")).contains("application/xml"));
 		assertTrue(MimeUtil.getMimeTypes(new File("a.de")).equals(UNKNOWN_MIME_TYPE_COLLECTION));
+
+		// Test for multiple extensions
+		assertTrue(MimeUtil.getMimeTypes(new File("e.1.3.jar")).contains("application/java-archive"));
+
 
 		// The following test case fails to detect properly with the OpendesktopMimeDetector
 		//assertTrue(MimeUtil.getMimeTypes(new File("src/test/resources/d-png.img")).contains("image/png"));

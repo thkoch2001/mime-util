@@ -19,9 +19,30 @@
  The API supports java.io.File and java.io.InputStream. It reads the system's magic files as used by the Unix file(1) command when used on a Unix OS.
  For Windows, internal resources are included in the library.
 
- For a fuller description of mime-util please refer to the README.txt file distributed with the library.
+ For a full description of mime-util please refer to the README.txt file distributed with the library.
 
  This file contains the release notes of each version of mime-util
+
+
+ Version 1.3.1 Released 21-03-2009
+ This version is a bug fix release for version 1.3
+
+ 1. eu.medsea.mimeutil.detector.ExtensionMimeDetector.
+ 	Muli-part extensions were not recognised correctly. The rule here was to general so it would use the longest extension mapping possible and was able
+ 	to identify .tar.gz files correctly as an extension but would also not identify files such as myjar-1.2.3.jar as it would use 2.3.jar as the extension.
+ 	The extension needed to be recursively parsed until either a match is found or there are no extension parts left to match.
+ 2. eu.medsea.mimeutil.detector.MagicMimeMimeDetector.
+ 	a.	The byte type matching rules for the magic.mime files did not work as the case condition fell through to the default clause setting the compare
+ 		buffer to null.
+ 	b.	The masked type matching ignored the mask e.g
+
+		# This is not the best match for application/vnd.ibm.modcap but it should still work
+		0	string	Z
+		>2	beshort&0x00FF	0xD3	application/vnd.ibm.modcap
+
+		The first line would match OK but the second level match for the beshort&0x00FF ignored the mask
+		and failed to match the content.
+
 
 
  Version 1.3 Released 04-03-2009
@@ -58,10 +79,10 @@ running on the system.
 There are no problems caused by having ALL of the MimeDetector(s) active at the same time, you will just get more mime types
 returned from the MimeUtil.getMimeTypes(...) calls.
 
-You can enable the OpendesktopMimeDetector by un-commenting the entry in the MimeDetectors file in the root of the jar file.
-If you are running this MimeDetector on a system that does not support the mime.cache file, such as windows, you can extract it
-from the jar and place it in a directory called /usr/share/mime/mime.cache. This file cannot be used directly from the jar file
-as it is used as a memory mapped file that must be located on the file system.
+You can enable the OpendesktopMimeDetector by un-commenting the entry in the MimeDetectors file in the root of the jar file or
+by just instanciating an instance of the class. If you are running this MimeDetector on a system that does not support the mime.cache file,
+such as windows, you can extract it from the jar and place it in a directory called /usr/share/mime/mime.cache. This file cannot be used
+directly from the jar file as it is used as a memory mapped file that must be located on the file system.
 
 
  Version 1.2 Released 27-01-2009

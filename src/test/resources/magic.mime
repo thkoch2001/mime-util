@@ -22,6 +22,12 @@
 #------------------------------------------------------------------------------
 # Add any locally observed files here.
 
+0	string	Z
+>2	beshort&0x00FF	0xD3	application/vnd.ibm.modcap
+
+0	byte	0x5A
+>3	byte	0xD3	application/vnd.ibm.modcap
+
 #PNG Image Format
 0		string		\211PNG\r\n\032\n		image/png
 

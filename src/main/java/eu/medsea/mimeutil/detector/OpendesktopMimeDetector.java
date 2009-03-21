@@ -144,8 +144,8 @@ public class OpendesktopMimeDetector extends MimeDetector {
 				&& (mimeTypes.isEmpty() || mimeTypes.size() > 1)) {
 			try {
 				// Now lookup using the magic methods
-				// The URL method will also use the java URLConnection getContentType() if no matches
-				Collection _mimeTypes = getMimeTypes(file.toURL().openConnection());
+				// The URL method will also use the java URLConnection getContentType() if there are no matches
+				Collection _mimeTypes = getMimeTypes(file.toURI().toURL().openConnection());
 				if(!_mimeTypes.isEmpty()) {
 					// Check for same mime type
 					for(Iterator it = mimeTypes.iterator(); it.hasNext();) {
@@ -325,7 +325,7 @@ public class OpendesktopMimeDetector extends MimeDetector {
 			} else {
 				String mimeType = getMimeType(content.getInt((listOffset + 4) + (12 * mid) + 4));
 				int weight = content.getInt((listOffset + 4) + (12 * mid) + 8);
-				mimeTypes.add(new MimeWeight(mimeType, literal, weight));
+				mimeTypes.add(new WeightedMimeType(mimeType, literal, weight));
 				return;
 			}
 		}
@@ -344,7 +344,7 @@ public class OpendesktopMimeDetector extends MimeDetector {
 			String mimeType = getMimeType(mimeTypeOffset);
 
 			if(fileName.matches(pattern)) {
-				mimeTypes.add(new MimeWeight(mimeType, pattern, weight));
+				mimeTypes.add(new WeightedMimeType(mimeType, pattern, weight));
 			}
 		}
 	}
@@ -355,7 +355,7 @@ public class OpendesktopMimeDetector extends MimeDetector {
 		// Sort the weightedMimeTypes
 		Collections.sort((List)weightedMimeTypes, new Comparator() {
 			public int compare(Object obj1, Object obj2) {
-				return ((MimeWeight)obj1).weight - ((MimeWeight)obj2).weight;
+				return ((WeightedMimeType)obj1).weight - ((WeightedMimeType)obj2).weight;
 			}
 		});
 
@@ -363,7 +363,7 @@ public class OpendesktopMimeDetector extends MimeDetector {
 		int weight = 0;
 		int patternLen = 0;
 		for(Iterator it = weightedMimeTypes.iterator(); it.hasNext();) {
-			MimeWeight mw = (MimeWeight)it.next();
+			WeightedMimeType mw = (WeightedMimeType)it.next();
 			if(weight < mw.weight){
 				weight = mw.weight;
 			}
@@ -371,21 +371,21 @@ public class OpendesktopMimeDetector extends MimeDetector {
 				if(mw.pattern.length() > patternLen) {
 					patternLen = mw.pattern.length();
 				}
-				mimeTypes.add(mw.mimeType);
+				mimeTypes.add(mw);
 			}
 		}
 
 		// Now keep only the longest patterns
 		for(Iterator it = weightedMimeTypes.iterator(); it.hasNext();) {
-			MimeWeight mw = (MimeWeight)it.next();
+			WeightedMimeType mw = (WeightedMimeType)it.next();
 			if(mw.pattern.length() < patternLen) {
-				mimeTypes.remove(mw.mimeType);
+				mimeTypes.remove(mw);
 			}
 		}
 
 		// Could possibly have multiple mimeTypes here with the same weight and
 		// pattern length. Can even multiple entries for the same type so lets remove
-		// any duplicates by copying entries to a HashSet that can only have a singlr instance
+		// any duplicates by copying entries to a HashSet that can only have a single instance
 		// of each type
 		Collection _mimeTypes = new HashSet();
 		for(Iterator it = mimeTypes.iterator(); it.hasNext();) {
@@ -460,7 +460,7 @@ public class OpendesktopMimeDetector extends MimeDetector {
 
 						int mimeOffset = content.getInt(childOffset + (12 * i) + 4);
 						int weight = content.getInt(childOffset + (12 * i) + 8);
-						mimeTypes.add(new MimeWeight(getMimeType(mimeOffset), pattern.toString(), weight));
+						mimeTypes.add(new WeightedMimeType(getMimeType(mimeOffset), pattern.toString(), weight));
 					}
 				}
 				return;
@@ -468,13 +468,12 @@ public class OpendesktopMimeDetector extends MimeDetector {
 		}
 	}
 
-	class MimeWeight {
-		String mimeType;
+	class WeightedMimeType extends MimeType {
 		String pattern;
 		int weight;
 
-		MimeWeight(String mimeType, String pattern, int weight) {
-			this.mimeType = mimeType;
+		WeightedMimeType(String mimeType, String pattern, int weight) {
+			super(mimeType);
 			this.pattern = pattern;
 			this.weight = weight;
 		}

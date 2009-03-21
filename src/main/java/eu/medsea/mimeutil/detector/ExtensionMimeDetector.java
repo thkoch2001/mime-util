@@ -124,26 +124,32 @@ public class ExtensionMimeDetector extends MimeDetector {
 	 */
 	public Collection getMimeTypesFile(final File file) throws MimeException {
 		Collection mimeTypes = new HashSet();
-		String fileExtension = MimeUtil.getExtension(file.getName());
-		// First try case insensitive match
 
-		String types = (String) extMimeTypes.get(fileExtension);
-		if (types != null) {
-			String [] mimeTypeArray = types.split(",");
-			for(int i = 0; i < mimeTypeArray.length; i++) {
-				mimeTypes.add(new MimeType(mimeTypeArray[i]));
-			}
-		}
-		if(mimeTypes.isEmpty()) {
-			// Failed to find case insensitive extension so lets try again with
-			// lowercase
-			types = (String) extMimeTypes.get(fileExtension.toLowerCase());
+		String fileExtension = MimeUtil.getExtension(file.getName());
+		while(fileExtension.length() != 0) {
+			String types = null;
+			// First try case sensitive
+			types = (String) extMimeTypes.get(fileExtension);
 			if (types != null) {
 				String [] mimeTypeArray = types.split(",");
 				for(int i = 0; i < mimeTypeArray.length; i++) {
 					mimeTypes.add(new MimeType(mimeTypeArray[i]));
 				}
+				return mimeTypes;
 			}
+			if(mimeTypes.isEmpty()) {
+				// Failed to find case insensitive extension so lets try again with
+				// lowercase
+				types = (String) extMimeTypes.get(fileExtension.toLowerCase());
+				if (types != null) {
+					String [] mimeTypeArray = types.split(",");
+					for(int i = 0; i < mimeTypeArray.length; i++) {
+						mimeTypes.add(new MimeType(mimeTypeArray[i]));
+					}
+					return mimeTypes;
+				}
+			}
+			fileExtension = MimeUtil.getExtension(fileExtension);
 		}
 		return mimeTypes;
 	}

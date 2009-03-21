@@ -8,13 +8,21 @@
 		<name>Medsea Business Solutions S.L.</name>
 	</organization>
 
-	<version>1.3</version>
+	<version>1.3.1</version>
 	<description>mime-util is a simple to use, small, light weight and fast open source java utility library that can detect the mime types of files and streams.
 		Due to the use of regular expressions and the java.nio packages it requires at least Java 1.4.
 		mime-util uses file extension mappings and the magic.mime rules files located on your system as used by the Unix file(1) command.
 		For OS's that do not support the Unix file(1) command, such as Windows, the library comes pre-packaged with a generic magic.mime file.
 	</description>
 	<url>http://sourceforge.net/projects/mime-util/</url>
+	<licenses>
+		<license>
+			<name>The Apache Software License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+
 
 	<build>
 		<defaultGoal>jar:jar</defaultGoal>
@@ -114,6 +122,7 @@
 			<groupId>commons-logging</groupId>
 			<artifactId>commons-logging</artifactId>
 			<version>1.1.1</version>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
@@ -172,12 +181,6 @@
 		<url>http://sourceforge.net/tracker/?group_id=205064</url>
 	</issueManagement>
 	<inceptionYear>2007</inceptionYear>
-	<licenses>
-		<license>
-			<name>The Apache Software License, Version 2.0</name>
-			<url>LICENSE.txt</url>
-		</license>
-	</licenses>
 	<scm>
 		<connection>scm:svn:https://mime-util.svn.sourceforge.net/svnroot/mime-util/trunk/MimeUtil</connection>
 		<developerConnection>scm:svn:https://mime-util.svn.sourceforge.net/svnroot/mime-util/trunk/MimeUtil</developerConnection>

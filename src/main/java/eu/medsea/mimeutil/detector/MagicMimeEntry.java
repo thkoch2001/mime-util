@@ -27,7 +27,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
-import eu.medsea.mimeutil.MimeException;
 import eu.medsea.mimeutil.MimeType;
 
 /**
@@ -449,6 +448,7 @@ class MagicMimeEntry {
 				case MagicMimeEntry.BYTE_TYPE: {
 					buf = ByteBuffer.allocate(1);
 					buf.put(buf.array(), startPos, 1);
+					break;
 				}
 
 				default: {
@@ -485,7 +485,8 @@ class MagicMimeEntry {
 			} else {
 				len = getContent().length();
 			}
-			buf = ByteBuffer.allocate(len + 1); // TODO why len+1?
+			// buf = ByteBuffer.allocate(len + 1); // TODO why len+1?
+			buf = ByteBuffer.allocate(len);
 			raf.read(buf.array(), 0, len);
 			break;
 		}
@@ -508,6 +509,7 @@ class MagicMimeEntry {
 		case MagicMimeEntry.BYTE_TYPE: {
 			buf = ByteBuffer.allocate(1);
 			raf.read(buf.array(), 0, 1);
+			break;
 		}
 
 		default: {
@@ -609,6 +611,7 @@ class MagicMimeEntry {
 
 		case MagicMimeEntry.BYTE_TYPE: {
 			matches = matchByte(buf);
+			break;
 		}
 
 		default: {
@@ -654,8 +657,22 @@ class MagicMimeEntry {
 			return false;
 	}
 
+	private long getMask(String maskString) {
+		String [] tokens = maskString.split("&");
+		if(tokens.length < 2){
+			return 0xffffffffL;
+		}
+		if(tokens[1].startsWith("0x")) {
+			return Long.parseLong(tokens[1].substring(2).trim(), 16);
+		}else if(tokens[1].startsWith("0")) {
+			return Long.parseLong(tokens[1], 8);
+		}else {
+			return Long.parseLong(tokens[1]);
+		}
+	}
+
 	private boolean matchByte(ByteBuffer bbuf) throws IOException {
-		short b = (short) (bbuf.get(0) & 0xff);
+		short b = (short) ((bbuf.get(0) & 0xff) & (short)getMask(typeStr));
 
 		if (operation.equals(MagicMimeEntryOperation.EQUALS)) {
 			return b == contentNumber;
@@ -685,7 +702,9 @@ class MagicMimeEntry {
 			throws IOException {
 		bbuf.order(bo);
 
-		int found = bbuf.getShort() & 0xffff;
+		int found = (bbuf.getShort() & 0xffff);
+		long mask = (int)getMask(typeStr);
+		found = (int)(found & mask);
 
 		if (operation.equals(MagicMimeEntryOperation.EQUALS)) {
 			return found == contentNumber;
@@ -714,7 +733,7 @@ class MagicMimeEntry {
 	private boolean matchLong(ByteBuffer bbuf, ByteOrder bo) throws IOException {
 		bbuf.order(bo);
 
-		long found = bbuf.getInt() & 0xffffffffL;
+		long found = (bbuf.getInt() & 0xffffffffL) & getMask(typeStr);
 
 		if (operation.equals(MagicMimeEntryOperation.EQUALS)) {
 			return found == contentNumber;
