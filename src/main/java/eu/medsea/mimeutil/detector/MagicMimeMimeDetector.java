@@ -27,8 +27,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -141,7 +141,9 @@ public class MagicMimeMimeDetector extends MimeDetector {
 
 	private static Log log = LogFactory.getLog(MagicMimeMimeDetector.class);
 
-	private static String[] defaultLocations = { "/usr/share/mimelnk/magic",
+	// Having the defaultLocations as protected allows you to override this class
+	// and add different paths or remove them all so that the internal file is always used
+	protected static String[] defaultLocations = { "/usr/share/mimelnk/magic",
 			"/usr/share/file/magic.mime", "/etc/magic.mime" };
 	private static List magicMimeFileLocations = Arrays
 			.asList(defaultLocations);
@@ -170,7 +172,7 @@ public class MagicMimeMimeDetector extends MimeDetector {
 	 */
 	public Collection getMimeTypesByteArray(final byte[] data)
 			throws MimeException {
-		Collection mimeTypes = new HashSet();
+		Collection mimeTypes = new LinkedHashSet();
 		int len = mMagicMimeEntries.size();
 		try {
 			for (int i = 0; i < len; i++) {
@@ -201,7 +203,7 @@ public class MagicMimeMimeDetector extends MimeDetector {
 	 */
 	public Collection getMimeTypesInputStream(final InputStream in)
 			throws MimeException {
-		Collection mimeTypes = new HashSet();
+		Collection mimeTypes = new LinkedHashSet();
 		int len = mMagicMimeEntries.size();
 		try {
 			for (int i = 0; i < len; i++) {
@@ -228,7 +230,7 @@ public class MagicMimeMimeDetector extends MimeDetector {
 	 *             if the file cannot be parsed.
 	 */
 	public Collection getMimeTypesFile(final File file) throws MimeException {
-		Collection mimeTypes = new HashSet();
+		Collection mimeTypes = new LinkedHashSet();
 		if (!file.exists()) {
 			return mimeTypes;
 		}
