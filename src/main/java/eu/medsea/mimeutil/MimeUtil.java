@@ -107,7 +107,7 @@ public class MimeUtil {
 
 	private static final Pattern mimeSplitter = Pattern.compile("[/;]++");
 
-	// All mime types know to the utility
+	// All mime types known to the utility
 	private static Map mimeTypes = new HashMap();
 
 	private static MimeUtilMimeDetectorRegistry mimeUtilMimeDetector = new MimeUtilMimeDetectorRegistry();
@@ -324,9 +324,9 @@ public class MimeUtil {
 			}
 		}
 		// No quality indicator so always assume its 1 unless a wild card is used
-		if (parts[0].contains("*")) {
+		if (StringUtil.contains(parts[0], "*")) {
 			return 0.01;
-		} else if (parts[1].contains("*")) {
+		} else if (StringUtil.contains(parts[1], "*")) {
 			return 0.02;
 		} else {
 			// Assume q value of 1
@@ -724,9 +724,9 @@ public class MimeUtil {
 			}
 		}
 		// No quality indicator so always assume its 1 unless a wild card is used
-		if (parts[0].contains("*")) {
+		if (StringUtil.contains(parts[0], "*")) {
 			return 0.01;
-		} else if (parts[1].contains("*")) {
+		} else if (StringUtil.contains(parts[1], "*")) {
 			return 0.02;
 		} else {
 			// Assume q value of 1
@@ -793,7 +793,7 @@ public class MimeUtil {
 			String minor = getSubType(mimeType);
 			double qos = getMimeQuality(mimeType);
 
-			if (major.contains("*")) {
+			if (StringUtil.contains(major ,"*")) {
 				// All canProvide types are acceptable with the qos defined OR
 				// 0.01 if not defined
 				Iterator it = canProvide.iterator();
@@ -806,7 +806,7 @@ public class MimeUtil {
 					list.add(mt + ";q=" + qos);
 					map.put(MimeUtil.getMediaType(mt), list);
 				}
-			} else if (minor.contains("*")) {
+			} else if (StringUtil.contains(minor, "*")) {
 				Iterator it = canProvide.iterator();
 				while (it.hasNext()) {
 					String mt = (String) it.next();

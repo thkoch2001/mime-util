@@ -49,4 +49,11 @@ public class StringUtil {
 		}
 		return new String(hex, "ASCII");
 	}
+
+	public static boolean contains(String target, String content) {
+		if(target.indexOf(content) != -1) {
+			return true;
+		}
+		return false;
+	}
 }
