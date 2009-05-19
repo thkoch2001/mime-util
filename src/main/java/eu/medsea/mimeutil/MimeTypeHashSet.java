@@ -140,7 +140,11 @@ class MimeTypeHashSet implements Set, Collection {
 		}
 		if((arg0 instanceof MimeType)) {
 			// Add a MimeType
-			updateSpecificity(arg0);
+			if(contains(arg0)) {
+				// We already have an entry so get it and update the specificity
+				updateSpecificity((MimeType)arg0);
+			}
+			MimeUtil.addKnownMimeType((MimeType)arg0);
 			return hashSet.add(arg0);
 
 		} else if(arg0 instanceof Collection) {
@@ -412,29 +416,21 @@ class MimeTypeHashSet implements Set, Collection {
 		return true;
 	}
 
-	private void updateSpecificity(final Object o) {
-		if(o instanceof MimeType) {
-			updateMimeType((MimeType)o);
-		}else {
-			Collection mimeTypes = (Collection)o;
-			for(Iterator it = mimeTypes.iterator(); it.hasNext();) {
-				updateMimeType((MimeType)it.next());
-			}
-		}
+	private void updateSpecificity(final MimeType o) {
+		MimeType mimeType = get(o);
+		int specificity = mimeType.getSpecificity() + o.getSpecificity();
+		mimeType.setSpecificity(specificity);
+		o.setSpecificity(specificity);
 	}
 
-	private void updateMimeType(final MimeType mimeType) {
-		if(!hashSet.contains(mimeType)) {
-			return;
-		}
-		// Hate this but I didn't want to use a backing map even though HashSet is backed by a HashMap
+	private MimeType get(MimeType mimeType) {
 		for(Iterator it = hashSet.iterator(); it.hasNext();) {
 			MimeType mt = (MimeType)it.next();
 			if(mt.equals(mimeType)) {
-				mt.setSpecificity(mt.getSpecificity() + mimeType.getSpecificity());
-				return;
+				return mt;
 			}
 		}
+		return null;
 	}
 
 	/*

@@ -1,4 +1,0 @@
-# Fully qualified classes of MimeDetectors to initialise
-#eu.medsea.mimeutil.detector.OpendesktopMimeDetector
-eu.medsea.mimeutil.detector.ExtensionMimeDetector
-eu.medsea.mimeutil.detector.MagicMimeMimeDetector

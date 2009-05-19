@@ -39,8 +39,8 @@ public class MimeType implements Comparable, Serializable {
 
 	private static final Pattern mimeSplitter = Pattern.compile ("[/;]++" );
 
-	private String mediaType = "*";
-	private String subType = "*";
+	protected String mediaType = "*";
+	protected String subType = "*";
 
 	//This is a estimate of how specific this mime type is
 	private int specificity = 1;

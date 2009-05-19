@@ -1,33 +1,65 @@
 package eu.medsea.mimeutil.detector;
 
 import java.io.File;
+import java.util.ArrayList;
+
+import eu.medsea.mimeutil.MimeUtil;
+import eu.medsea.util.EncodingGuesser;
 
 import junit.framework.TestCase;
 
 public class OpendesktopMimeDetectorTest extends TestCase {
 
-	private OpendesktopMimeDetector mimeDetector = new OpendesktopMimeDetector();
+	public void setUp() {
+		MimeUtil.registerMimeDetector("eu.medsea.mimeutil.detector.OpendesktopMimeDetector");
+	}
+
+	public void tearDown() {
+		MimeUtil.unregisterMimeDetector("eu.medsea.mimeutil.detector.OpendesktopMimeDetector");
+	}
+
 
 	public void testGetDescription() {
+		MimeDetector mimeDetector = MimeUtil.getMimeDetector("eu.medsea.mimeutil.detector.OpendesktopMimeDetector");
 		assertEquals(mimeDetector.getDescription(), "Resolve mime types for files and streams using the Opendesktop shared mime.cache file. Version [1.1].");
 	}
 
-	public void testGetMimeTypesFile() {
+	public void testGetMimeTypesFileGlob() {
 
-		assertEquals("[text/plain]", mimeDetector.getMimeTypesFile(new File("abc.txt")).toString());
-		assertEquals("[text/x-makefile]", mimeDetector.getMimeTypesFile(new File("makefile")).toString());
-		assertEquals("[text/x-makefile]", mimeDetector.getMimeTypesFile(new File("Makefile")).toString());
-		assertEquals("[image/x-win-bitmap]", mimeDetector.getMimeTypesFile(new File("x.cur")).toString());
-		assertEquals("[application/vnd.ms-tnef]", mimeDetector.getMimeTypesFile(new File("winmail.dat")).toString());
-		assertEquals("[text/x-troff-mm]", mimeDetector.getMimeTypesFile(new File("abc.mm")).toString());
-		assertEquals("[text/x-readme]", mimeDetector.getMimeTypesFile(new File("README")).toString());
-		assertEquals("[video/x-anim]", mimeDetector.getMimeTypesFile(new File("abc.anim5")).toString());
-		assertEquals("[video/x-anim]", mimeDetector.getMimeTypesFile(new File("abc.animj")).toString());
-		assertEquals("[text/x-readme]", mimeDetector.getMimeTypesFile(new File("READMEFILE")).toString());
-		assertEquals("[text/x-readme]", mimeDetector.getMimeTypesFile(new File("READMEanim3")).toString());
-		assertEquals("[text/x-log]", mimeDetector.getMimeTypesFile(new File("README.log")).toString());
-		assertEquals("[text/x-readme]", mimeDetector.getMimeTypesFile(new File("README.file")).toString());
-		assertEquals("[application/x-compress]", mimeDetector.getMimeTypesFile(new File("README.Z")).toString());
-		assertEquals("[]", mimeDetector.getMimeTypesFile(new File("READanim3")).toString());
+		assertEquals("text/plain", MimeUtil.getMimeTypes(new File("abc.txt")).toString());
+		assertEquals("text/x-makefile", MimeUtil.getMimeTypes(new File("makefile")).toString());
+		assertEquals("text/x-makefile", MimeUtil.getMimeTypes(new File("Makefile")).toString());
+		assertEquals("image/x-win-bitmap", MimeUtil.getMimeTypes(new File("x.cur")).toString());
+		assertEquals("application/vnd.ms-tnef", MimeUtil.getMimeTypes(new File("winmail.dat")).toString());
+		assertEquals("text/x-troff-mm", MimeUtil.getMimeTypes(new File("abc.mm")).toString());
+		assertEquals("text/x-readme", MimeUtil.getMimeTypes(new File("README")).toString());
+		assertEquals("video/x-anim", MimeUtil.getMimeTypes(new File("abc.anim5")).toString());
+		assertEquals("video/x-anim", MimeUtil.getMimeTypes(new File("abc.animj")).toString());
+		assertEquals("text/x-readme", MimeUtil.getMimeTypes(new File("READMEFILE")).toString());
+		assertEquals("text/x-readme", MimeUtil.getMimeTypes(new File("READMEanim3")).toString());
+		assertEquals("text/x-log", MimeUtil.getMimeTypes(new File("README.log")).toString());
+		assertEquals("text/x-readme", MimeUtil.getMimeTypes(new File("README.file")).toString());
+		assertEquals("application/x-compress", MimeUtil.getMimeTypes(new File("README.Z")).toString());
+		assertEquals(MimeUtil.UNKNOWN_MIME_TYPE, MimeUtil.getMimeTypes(new File("READanim3")).toString());
+
+		// Try multi extensions
+		assertEquals("application/x-java-archive", MimeUtil.getMimeTypes(new File("e.1.3.jar")).toString());
 	}
+
+	public void testGetMimeTypesFile() {
+		// Globbing won't work so lets try magic sniffing
+		assertTrue(MimeUtil.getMimeTypes(new File("src/test/resources/e[xml]")).contains("application/xml"));
+
+		// This is a text file so the text file detector should be used but first verify it's not matched
+		assertFalse(MimeUtil.getMimeTypes(new File("src/test/resources/plaintext")).contains("text/plain"));
+
+		// Now set the supported encodings to all encodings supported by the JVM
+		EncodingGuesser.setSupportedEncodings(EncodingGuesser.getCanonicalEncodingNamesSupportedByJVM());
+		assertTrue(MimeUtil.getMimeTypes(new File("src/test/resources/plaintext")).contains("text/plain"));
+		// Clean out the encodings using an empty collection
+		EncodingGuesser.setSupportedEncodings(new ArrayList());
+
+
+	}
+
 }

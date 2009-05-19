@@ -16,10 +16,8 @@
 package eu.medsea.mimeutil;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLConnection;
 import java.nio.ByteOrder;
@@ -35,10 +33,11 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import eu.medsea.mimeutil.detector.MimeDetector;
+import eu.medsea.util.EncodingGuesser;
 import eu.medsea.util.StringUtil;
 
 /**
@@ -54,10 +53,14 @@ import eu.medsea.util.StringUtil;
  * text/xml and application/xml and even specialised versions of xml such as image/svg+xml for SVG image files.
  * </p>
  * <p>
- * To do this <code>MimeUtil</code> uses registered <code>MimeDetector</code>(s) that are delegated too in sequence to actually
- * perform the detection. There a three <code>MimeDetector</code>(s) registered by default that
- * perform detection based on file extensions, file globing and magic number detection using
- * the Unix file(1) magic.mime files.
+ * To do this <code>MimeUtil</code> uses registered <code>MimeDetector</code>(s) that are delegated to in sequence to actually
+ * perform the detection. There a three <code>MimeDetector</code> implementations in the utility that
+ * you can register and unregister to perform detection based on file extensions, file globing and magic number detection.<br/>
+ * Their is also a fourth MimeDetector that is registered by default that detects text files and their encodings. Unlike the other
+ * MimeDetector(s) or any MimeDetector(s) you may choose to implement, the TextFileMimeDetector cannot be registered or
+ * unregistered by your code. It is advisable that you read the java doc for the TextFileMimeDetector as it can be modified in
+ * several ways to make it perform better and or detect more specific types.<br/>
+ *
  * Please refer to the java doc for each of these <code>MimeDetector</code>(s) for a description of how they
  * actually perform their particular detection process.
  * </p>
@@ -70,10 +73,10 @@ import eu.medsea.util.StringUtil;
  * <p>
  * New <code>MimeDetector</code>(s) can easily be created and registered with <code>MimeUtil</code> to extend it's
  * functionality beyond these initial detection strategies by extending the <code>AbstractMimeDetector</code> class.
- * To see how to implement your own <code>MimeDetector</code> and register it with <code>MimeUtil</code> take a look
+ * To see how to implement your own <code>MimeDetector</code> take a look
  * at the java doc and source code for the {@link ExtensionMimeDetector}, {@link MagicMimeMimeDetector} and
- * {@link GlobingMimeDetector} classes. Previously registered <code>MimeDetector</code>(s) can also be un-registered at
- * any time.
+ * {@link OpendesktopMimeDetector} classes. To register and unregister MimeDetector(s) use the static
+ * [un]registerMimeDetector(...) methods of this class.
  * </p>
  * <p>
  * The order that the <code>MimeDetector</code>(s) are executed is defined by the priority of the individual <code>MimeDetector</code>(s)
@@ -94,7 +97,7 @@ import eu.medsea.util.StringUtil;
  *
  */
 public class MimeUtil {
-	private static Log log = LogFactory.getLog(MimeUtil.class);
+	private static Logger log = LoggerFactory.getLogger(MimeUtil.class);
 
 	/**
 	 * Mime type used to identify a directory
@@ -110,29 +113,10 @@ public class MimeUtil {
 	// All mime types known to the utility
 	private static Map mimeTypes = new HashMap();
 
-	private static MimeUtilMimeDetectorRegistry mimeUtilMimeDetector = new MimeUtilMimeDetectorRegistry();
+	private static MimeDetectorRegistry mimeDetectorRegistry = new MimeDetectorRegistry();
 
 	// the native byte order of the underlying OS. "BIG" or "little" Endian
 	private static ByteOrder nativeByteOrder = ByteOrder.nativeOrder();
-
-	// Register all know internal mime detectors.
-	static {
-		InputStream is = MimeUtil.class.getResourceAsStream("/MimeDetectors");
-		BufferedReader br = new BufferedReader(new InputStreamReader(is));
-		if(is != null) {
-			try {
-				String line = null;
-				while((line = br.readLine()) != null) {
-					if(line.trim().startsWith("#")) {
-						continue;
-					}
-					Class.forName(line);
-				}
-			}catch(Exception e) {
-				e.printStackTrace();
-			}
-		}
-	}
 
 	/**
 	 * While MimeType(s) are being loaded by the MimeDetector(s) they should be
@@ -204,17 +188,16 @@ public class MimeUtil {
 	}
 
 	/**
-	 * Add a MimeDetector to the MimeDetector registry.
+	 * Register a MimeDetector and add it to the MimeDetector registry.
 	 * MimeDetector(s) are effectively singletons as they are keyed against their
 	 * fully qualified class name.
-	 * @param mimeDetector. This must be an AbstractMimeDetector class and not
-	 * a MimeUtil interface. This enforces that all custom MimeDetector(s) extend
-	 * the AbstractMimeDetector rather than just implementing the MimeDetector interface.
-	 * @see MimeDetector
+	 * @param mimeDetector. This must be the fully quallified name of a concrete instance of an
+	 * AbstractMimeDetector class.
+	 * This enforces that all custom MimeDetector(s) extend the AbstractMimeDetector.
 	 * @see MimeDetector
 	 */
-	public static void addMimeDetector(final MimeDetector mimeDetector) {
-		mimeUtilMimeDetector.addMimeDetector(mimeDetector);
+	public static MimeDetector registerMimeDetector(final String mimeDetector) {
+		return mimeDetectorRegistry.registerMimeDetector(mimeDetector);
 	}
 
 	/**
@@ -225,7 +208,13 @@ public class MimeUtil {
 	 * @return the file extension or null if it does not have one.
 	 */
 	public static String getExtension(final File file) {
-		return MimeUtil.getExtension(file.getName());
+
+		// Remove any path element from this name
+		String fname = file.getName();
+		if (fname == null || fname.indexOf(".") < 0) {
+			return "";
+		}
+		return fname.substring(fname.indexOf(".") + 1);
 	}
 
 	/**
@@ -238,13 +227,8 @@ public class MimeUtil {
 	 * @return the file extension or null if it does not have one.
 	 */
 	public static String getExtension(final String fileName) {
-		// Remove any path element from this name
-		File file = new File(fileName);
-		String fname = file.getName();
-		if (fname == null || fname.indexOf(".") < 0) {
-			return "";
-		}
-		return fname.substring(fname.indexOf(".") + 1);
+
+		return getExtension(new File(fileName));
 	}
 
 	/**
@@ -341,13 +325,15 @@ public class MimeUtil {
 	 * @return
 	 */
 	public static MimeDetector getMimeDetector(final String name) {
-		return mimeUtilMimeDetector.getMimeDetector(name);
+		return mimeDetectorRegistry.getMimeDetector(name);
 	}
 
 	/**
-	 * TODO: Add description
+	 * Get a Collection of possible MimeType(s) that this byte array could represent
+	 * according to the registered MimeDetector(s). If no MimeType(s) are detected
+	 * then the returned Collection will contain only the UNKNOWN_MIME_TYPE
 	 * @param data
-	 * @return
+	 * @return all matching MimeType(s)
 	 * @throws MimeException
 	 */
 	public static Collection getMimeTypes(final byte [] data) throws MimeException
@@ -356,9 +342,12 @@ public class MimeUtil {
 	}
 
 	/**
-	 * TODO: Add desription
+	 * Get a Collection of possible MimeType(s) that this byte array could represent
+	 * according to the registered MimeDetector(s). If no MimeType(s) are detected
+	 * then the returned Collection will contain only the passed in unknownMimeType
 	 * @param data
-	 * @param unknownMimeType
+	 * @param unknownMimeType used if the registered MimeDetector(s) fail to match any MimeType(s)
+	 * @return all matching MimeType(s)
 	 * @throws MimeException
 	 */
 	public static Collection getMimeTypes(final byte [] data, final MimeType unknownMimeType) throws MimeException
@@ -370,7 +359,7 @@ public class MimeUtil {
 				throw new MimeException(uee);
 			}
 		}
-		return mimeUtilMimeDetector.getMimeTypes(data, unknownMimeType);
+		return mimeDetectorRegistry.getMimeTypes(data, unknownMimeType);
 	}
 
 	/**
@@ -405,7 +394,7 @@ public class MimeUtil {
 		if(log.isDebugEnabled()) {
 			log.debug("Getting mime types for file [" + file.getAbsolutePath() + "].");
 		}
-		return mimeUtilMimeDetector.getMimeTypes(file, unknownMimeType);
+		return mimeDetectorRegistry.getMimeTypes(file, unknownMimeType);
 	}
 
 	/**
@@ -442,7 +431,7 @@ public class MimeUtil {
 		}
 		if (!in.markSupported())
 			throw new MimeException("InputStream does not support mark and reset!");
-		return mimeUtilMimeDetector.getMimeTypes(in, unknownMimeType);
+		return mimeDetectorRegistry.getMimeTypes(in, unknownMimeType);
 	}
 
 	/**
@@ -477,7 +466,7 @@ public class MimeUtil {
 		if(log.isDebugEnabled()) {
 			log.debug("Getting mime types for file name [" + fileName + "].");
 		}
-		return mimeUtilMimeDetector.getMimeTypes(fileName, unknownMimeType);
+		return mimeDetectorRegistry.getMimeTypes(fileName, unknownMimeType);
 	}
 
 	/**
@@ -513,7 +502,7 @@ public class MimeUtil {
 			log.debug("Getting mime types for URL [" + url + "].");
 		}
 		try {
-			return mimeUtilMimeDetector.getMimeTypes(new BufferedInputStream(url.getInputStream()), unknownMimeType);
+			return mimeDetectorRegistry.getMimeTypes(url, unknownMimeType);
 		}catch(Exception e) {
 			throw new MimeException(e);
 		}
@@ -664,7 +653,7 @@ public class MimeUtil {
 	/**
 	 * Utility convenience method to check if a particular MimeType instance is actually a TextMimeType.
 	 * Used when iterating over a collection of MimeType's to help with casting to enable access
-	 * the the TextMimeType methods not available to a standard MimeType.
+	 * the the TextMimeType methods not available to a standard MimeType. Can also use instanceof.
 	 * @param mimeType
 	 * @return true if the passed in instance is a TextMimeType
 	 * @see MimeType
@@ -679,8 +668,17 @@ public class MimeUtil {
 	 * @param mimeDetector
 	 * @return the MimeDetector that was removed from the registry else null.
 	 */
-	public static MimeDetector removeMimeDetector(final MimeDetector mimeDetector) {
-		return mimeUtilMimeDetector.removeMimeDetector(mimeDetector);
+	public static MimeDetector unregisterMimeDetector(final MimeDetector mimeDetector) {
+		return mimeDetectorRegistry.unregisterMimeDetector(mimeDetector);
+	}
+
+	/**
+	 * Remove a previously registered MimeDetector
+	 * @param mimeDetector
+	 * @return the MimeDetector that was removed from the registry else null.
+	 */
+	public static MimeDetector unregisterMimeDetector(final String mimeDetector) {
+		return mimeDetectorRegistry.unregisterMimeDetector(mimeDetector);
 	}
 
 	/**
@@ -836,8 +834,8 @@ public class MimeUtil {
 	}
 
 	/**
-	 * Allow to determine the mime types of a files from the command line.
-	 * Only uses the the ExtensionMimeDetector and MagicMimeMimeDetector
+	 * Allows to determine the mime types of files from the command line.
+	 * Uses the the TextFileMimeDetector (the default) ExtensionMimeDetector and MagicMimeMimeDetector
 	 * @param args pass in the name(s) of 1 or more file(s) to determine the mime types for
 	 */
 	public static void main(String [] args) {
@@ -845,6 +843,9 @@ public class MimeUtil {
 			System.out.println("java -jar mime-util-<version>.jar <file> [<file> ...]");
 			System.exit(-1);
 		}
+		MimeUtil.registerMimeDetector("eu.medsea.mimeutil.detector.ExtensionMimeDetector");
+		MimeUtil.registerMimeDetector("eu.medsea.mimeutil.detector.MagicMimeMimeDetector");
+
 		for(int i = 0; i < args.length; i++) {
 			File f = new File(args[i]);
 			System.out.println("File:[" + f.getAbsolutePath() + "] - " + MimeUtil.getMimeTypes(args[i]));
@@ -861,42 +862,83 @@ public class MimeUtil {
  * @author Steven McArdle
  *
  */
-class MimeUtilMimeDetectorRegistry {
+class MimeDetectorRegistry {
 
-	private static Log log = LogFactory.getLog(MimeUtilMimeDetectorRegistry.class);
+	private static Logger log = LoggerFactory.getLogger(MimeDetectorRegistry.class);
+
+	/**
+	 * This property holds an instance of the TextFileMimeDetector used
+	 * when no other MimeType is detected any other MimeDetector
+	 */
+	private static TextFileMimeDetector textFileMimeDetector = new TextFileMimeDetector(1);
+
 
 	private Map mimeDetectors = new TreeMap();
 
-	MimeDetector addMimeDetector(final MimeDetector mimeDetector) {
-		if(mimeDetectors.containsKey(mimeDetector.getName())) {
-			log.error("MimeDetector [" + mimeDetector.getName() + "] will not be registered as a MimeDetector with this name is already registered.");
-			return (MimeDetector)mimeDetectors.get(mimeDetector.getName());
+	/**
+	 * Use the fully qualified name of a MimeDetector and try to instantiate it if
+	 * it's not already registered. If it's already registered then log a warning and
+	 * return the already registered MimeDetector
+	 * @param mimeDetector
+	 * @return MimeDetector registered under this name. Return null if an exception occurs
+	 */
+	MimeDetector registerMimeDetector(final String mimeDetector) {
+		if(mimeDetectors.containsKey(mimeDetector)) {
+			log.warn("MimeDetector [" + mimeDetector + "] will not be registered as a MimeDetector with this name is already registered.");
+			return (MimeDetector)mimeDetectors.get(mimeDetector);
 		}
-		if(log.isDebugEnabled()) {
-			log.debug("Registering MimeDetect with name [" + mimeDetector.getName() + "] and description [" + mimeDetector.getDescription() + "]");
+		// Create the mime detector if we can
+		try {
+			MimeDetector md = (MimeDetector)Class.forName(mimeDetector).newInstance();
+			if(log.isDebugEnabled()) {
+				log.debug("Registering MimeDetector with name [" + md.getName() + "] and description [" + md.getDescription() + "]");
+			}
+			return (MimeDetector)mimeDetectors.put(mimeDetector, md);
+		}catch(Exception e) {
+			log.error("Exception while registering MimeDetector [" + mimeDetector + "].", e);
 		}
-		return (MimeDetector)mimeDetectors.put(mimeDetector.getName(), mimeDetector);
+		// Failed to create an instance
+		return null;
 	}
 
 	MimeDetector getMimeDetector(final String name) {
 		return (MimeDetector)mimeDetectors.get(name);
 	}
 
+	Collection getMimeTypes(final URLConnection urlConnection, final MimeType unknownMimeType) throws MimeException
+	{
+		try {
+			return getMimeTypes(new BufferedInputStream(urlConnection.getInputStream()), unknownMimeType);
+		}catch(Exception e) {
+			throw new MimeException(e);
+		}
+	}
+
 	Collection getMimeTypes(final byte [] data, final MimeType unknownMimeType) throws MimeException
 	{
 		Collection mimeTypes = new MimeTypeHashSet();
 		if(data != null) {
+			try {
+				if(!EncodingGuesser.getSupportedEncodings().isEmpty()) {
+					mimeTypes.addAll(textFileMimeDetector.getMimeTypes(data));
+				}
+			}catch(UnsupportedOperationException ignore) {
+				// The TextFileMimeDetector will throw this if it decides
+				// the content is not text
+			}
 			for(Iterator it  = mimeDetectors.values().iterator();it.hasNext();) {
 				try {
 					MimeDetector md = (MimeDetector)it.next();
 					mimeTypes.addAll(md.getMimeTypes(data));
-				}catch(UnsupportedOperationException usoe) {
+				}catch(UnsupportedOperationException ignore) {
 					// We ignore this as it indicates that this MimeDetector does not support
 					// Getting mime types from files
 				}catch(Exception e) {
-					log.error(e, e);
+					log.error(e.getLocalizedMessage(), e);
 				}
 			}
+			// We don't want any of the built in MimeDetector(s) returning this value
+			mimeTypes.remove(unknownMimeType);
 		}
 		if(mimeTypes.isEmpty()) {
 			mimeTypes.add(unknownMimeType);
@@ -910,17 +952,30 @@ class MimeUtilMimeDetectorRegistry {
 	Collection getMimeTypes(final File file, final MimeType unknownMimeType) throws MimeException
 	{
 		Collection mimeTypes = new MimeTypeHashSet();
+		try {
+			if(!EncodingGuesser.getSupportedEncodings().isEmpty()) {
+				mimeTypes.addAll(textFileMimeDetector.getMimeTypes(file));
+			}
+		}catch(UnsupportedOperationException ignore) {
+			// The TextFileMimeDetector will throw this if it decides
+			// the content is not text
+		}
+
 		for(Iterator it  = mimeDetectors.values().iterator();it.hasNext();) {
 			try {
 				MimeDetector md = (MimeDetector)it.next();
 				mimeTypes.addAll(md.getMimeTypes(file));
+
 			}catch(UnsupportedOperationException usoe) {
 				// We ignore this as it indicates that this MimeDetector does not support
 				// Getting mime types from files
 			}catch(Exception e) {
-				log.error(e, e);
+				log.error(e.getLocalizedMessage(), e);
 			}
 		}
+		// We don't want any of the built in MimeDetector(s) returning this value
+		mimeTypes.remove(unknownMimeType);
+
 		if(mimeTypes.isEmpty()) {
 			mimeTypes.add(unknownMimeType);
 		}
@@ -933,6 +988,14 @@ class MimeUtilMimeDetectorRegistry {
 	Collection getMimeTypes(final InputStream in, final MimeType unknownMimeType) throws MimeException
 	{
 		Collection mimeTypes = new MimeTypeHashSet();
+		try {
+			if(!EncodingGuesser.getSupportedEncodings().isEmpty()) {
+				mimeTypes.addAll(textFileMimeDetector.getMimeTypes(in));
+			}
+		}catch(UnsupportedOperationException ignore) {
+			// The TextFileMimeDetector will throw this if it decides
+			// the content is not text
+		}
 		for(Iterator it  = mimeDetectors.values().iterator();it.hasNext();) {
 			try {
 				MimeDetector md = (MimeDetector)it.next();
@@ -941,9 +1004,12 @@ class MimeUtilMimeDetectorRegistry {
 				// We ignore this as it indicates that this MimeDetector does not support
 				// Getting mime types from streams
 			}catch(Exception e) {
-				log.error(e, e);
+				log.error(e.getLocalizedMessage(), e);
 			}
 		}
+		// We don't want any of the built in MimeDetector(s) returning this value
+		mimeTypes.remove(unknownMimeType);
+
 		if(mimeTypes.isEmpty()) {
 			mimeTypes.add(unknownMimeType);
 		}
@@ -956,6 +1022,14 @@ class MimeUtilMimeDetectorRegistry {
 	Collection getMimeTypes(final String fileName, final MimeType unknownMimeType) throws MimeException
 	{
 		Collection mimeTypes = new MimeTypeHashSet();
+		try {
+			if(!EncodingGuesser.getSupportedEncodings().isEmpty()) {
+				mimeTypes.addAll(textFileMimeDetector.getMimeTypes(fileName));
+			}
+		}catch(UnsupportedOperationException ignore) {
+			// The TextFileMimeDetector will throw this if it decides
+			// the content is not text
+		}
 		for(Iterator it  = mimeDetectors.values().iterator();it.hasNext();) {
 			try {
 				MimeDetector md = (MimeDetector)it.next();
@@ -964,9 +1038,12 @@ class MimeUtilMimeDetectorRegistry {
 				// We ignore this as it indicates that this MimeDetector does not support
 				// Getting mime types from file names
 			}catch(Exception e) {
-				log.error(e, e);
+				log.error(e.getLocalizedMessage(), e);
 			}
 		}
+		// We don't want any of the built in MimeDetector(s) returning this value
+		mimeTypes.remove(unknownMimeType);
+
 		if(mimeTypes.isEmpty()) {
 			mimeTypes.add(unknownMimeType);
 		}
@@ -976,16 +1053,28 @@ class MimeUtilMimeDetectorRegistry {
 		return mimeTypes;
 	}
 
-
-	MimeDetector removeMimeDetector(final MimeDetector mimeDetector) {
+	MimeDetector unregisterMimeDetector(final String mimeDetector) {
 		if(mimeDetector == null) {
-			log.error("Cannot remove NULL from MimeDetector registry.");
 			return null;
 		}
 		if(log.isDebugEnabled()) {
-			log.debug("Removing MimeDetector [" + mimeDetector.getName() + "] from registry.");
+			log.debug("Unregistering MimeDetector [" + mimeDetector + "] from registry.");
+		}
+		return (MimeDetector)mimeDetectors.remove(mimeDetector);
+	}
+
+	/**
+	 * unregister the MimeDetector from the list.
+	 * @param mimeDetector the MimeDetector to unregister
+	 * @return MimeDetector unregistered or null if it was not registered
+	 */
+	MimeDetector unregisterMimeDetector(final MimeDetector mimeDetector) {
+		if(mimeDetector == null) {
+			return null;
+		}
+		if(log.isDebugEnabled()) {
+			log.debug("Unregistering MimeDetector [" + mimeDetector.getName() + "] from registry.");
 		}
 		return (MimeDetector)mimeDetectors.remove(mimeDetector.getName());
 	}
-
 }

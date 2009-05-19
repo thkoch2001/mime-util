@@ -20,15 +20,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLConnection;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import eu.medsea.mimeutil.MimeException;
-import eu.medsea.mimeutil.MimeType;
+import eu.medsea.mimeutil.MimeUtil;
 import eu.medsea.mimeutil.detector.MimeDetector;
-import eu.medsea.mimeutil.handler.MimeHandler;
 
 /**
  * ALL MimeDetector(s) must extend this class.
@@ -36,8 +31,6 @@ import eu.medsea.mimeutil.handler.MimeHandler;
  *
  */
 public abstract class MimeDetector {
-
-	private SortedSet mimeHandlers = new TreeSet();
 
 	/**
 	 * Gets the name of this MimeDetector
@@ -48,63 +41,16 @@ public abstract class MimeDetector {
 	}
 
 	/**
-	 * Add a mime handler to this MimeDetector. The MimeHandler(s) are given a chance
-	 * to influence the collection of MimeTypes before they are returned for collation by
-	 * MimeUtil and then passed back to the client.
-	 * @param handler
-	 */
-	public final void addMimeHandler(MimeHandler handler) {
-		mimeHandlers.add(handler);
-	}
-
-	/**
-	 * remove a mime handler to this MimeDetector. The MimeHandler(s) are given a chance
-	 * to influence the collection of MimeTypes before they are returned for collation by
-	 * MimeUtil and then passed back to the client.
-	 * @param handler
-	 * @return true if the MimeHandler was removed else false.
-	 */
-	public final boolean removeMimeHandler(MimeHandler handler) {
-		return mimeHandlers.remove(handler);
-	}
-
-	/**
-	 * Return the Set of MimeHandler(s). A set is used as the MimeHandler(s)
-	 * are order maintained.
-	 * @return Set of currently registered MimeHandler(s)
-	 */
-	public final Set getMimeHandlers() {
-		return mimeHandlers;
-	}
-
-	/*
-	 * Iterates over the Set of MimeHandler(s)and executes them if the MimeType collection
-	 * contains any of the MimeTypes the MimeHandler is interested in.
-	 */
-	private Collection fireMimeHandlers(Collection mimeTypes) {
-		for(Iterator it = mimeHandlers.iterator(); it.hasNext();) {
-			MimeHandler mh = (MimeHandler)it.next();
-			for(Iterator itmh = mh.getMimeTypes().iterator(); itmh.hasNext();) {
-				MimeType mt = (MimeType)itmh.next();
-				// If the MimeTypeHandler is interested in any of the mimeTypes then fire it.
-				if(mimeTypes.contains(mt)) {
-					mimeTypes = mh.handle(mimeTypes);
-					// Only call the MimeHandler once.
-					// It can process all the types it is interested in if more than one MimeType was registered.
-					break;
-				}
-			}
-		}
-		return mimeTypes;
-	}
-
-	/**
 	 * This method is called by the MimeUtil getMimeTypes(byte []) method via the MimeUtil.MimeUtilMimeDetectorRegistry class.
 	 * @param data
 	 * @return collection of matched MimeType(s) from the specific MimeDetector getMimeTypesByteArray(...) abstract method.
 	 */
-	public final Collection getMimeTypes(final byte [] data) {
-		return fireMimeHandlers(getMimeTypesByteArray(data));
+	public final Collection getMimeTypes(final byte [] data) throws MimeException {
+		Collection mimeTypes = getMimeTypesByteArray(data);
+		// We remove any entry that may be the same as the UNKNOWN_MIME_TYPE
+		// because we get this by default if there are NO other mime types.
+		mimeTypes.remove(MimeUtil.UNKNOWN_MIME_TYPE);
+		return mimeTypes;
 	}
 
 	/**
@@ -114,12 +60,16 @@ public abstract class MimeDetector {
 	 */
 	public final Collection getMimeTypes(final URLConnection url) {
 		try {
-			Collection mimeTypes = fireMimeHandlers(getMimeTypesInputStream(new BufferedInputStream(url.getInputStream())));
+			Collection mimeTypes = getMimeTypes(new BufferedInputStream(url.getInputStream()));
 			if(mimeTypes.isEmpty()) {
 				// If no mime types are returned try to get the mime type from the URLConnection
-				mimeTypes.add(url.getContentType());
+				String mimeType = url.getContentType();
+				if(mimeType != null && mimeType.length() != 0 && !"content/unknown".equals(mimeType)) {
+					// We don't want to record empty mime types or the content/unknown mime type
+					mimeTypes.add(url.getContentType());
+				}
 			}
-			return mimeTypes; 
+			return mimeTypes;
 		} catch (IOException e) {
 			throw new MimeException(e);
 		}
@@ -131,7 +81,11 @@ public abstract class MimeDetector {
 	 * @return collection of matched MimeType(s) from the specific MimeDetector getMimeTypesFile(...) abstract method.
 	 */
 	public final Collection getMimeTypes(final File file) throws MimeException {
-		return fireMimeHandlers(getMimeTypesFile(file));
+		Collection mimeTypes = getMimeTypesFile(file);
+		// We remove any entry that may be the same as the UNKNOWN_MIME_TYPE
+		// because we get this by default if there are NO other mime types.
+		mimeTypes.remove(MimeUtil.UNKNOWN_MIME_TYPE);
+		return mimeTypes;
 	}
 
 	/**
@@ -140,16 +94,24 @@ public abstract class MimeDetector {
 	 * @return collection of matched MimeType(s) from the specific MimeDetector getMimeTypesFile(...) abstract method.
 	 */
 	public final Collection getMimeTypes(final String fileName) throws MimeException {
-		return fireMimeHandlers(getMimeTypesFile(new File(fileName)));
+		return getMimeTypes(new File(fileName));
 	}
 
 	/**
 	 * This method is called by the MimeUtil getMimeTypes(InputStream) method via the MimeUtil.MimeUtilMimeDetectorRegistry class.
+	 * The Stream is checked to see that it supports the mark() and reset() methods but using them is down to the implementation.
 	 * @param file
 	 * @return collection of matched MimeType(s) from the specific MimeDetector getMimeTypesInputStream(...) abstract method.
 	 */
 	public final Collection getMimeTypes(final InputStream in) throws MimeException {
-		return fireMimeHandlers(getMimeTypesInputStream(in));
+		if(!in.markSupported()) {
+			throw new MimeException("mark() and reset() must be supported by the Stream.");
+		}
+		Collection mimeTypes = getMimeTypesInputStream(in);
+		// We remove any entry that may be the same as the UNKNOWN_MIME_TYPE
+		// because we get this by default if there are NO other mime types.
+		mimeTypes.remove(MimeUtil.UNKNOWN_MIME_TYPE);
+		return mimeTypes;
 	}
 
 	/**
@@ -175,8 +137,21 @@ public abstract class MimeDetector {
 	 * called by the MimeUtil getMimeTypes(URLConnection) and getMimeTypes(InputStream) methods.
 	 * If your MimeDetector does not handle InputStream objects then either throw an UnsupportedOperationException or return an
 	 * empty collection.
+	 * <p>
+	 * If the InputStream passed in does not support the mark() and reset() methods a MimeException will be thrown
+	 * before reaching this point. The implementation is responsible for the actual use of the mark() and reset() methods
+	 * as the amount of data to retrieve from the stream is implementation and even call to call dependent.
+	 * If you do not use the mark() and reset() methods on the Stream then the position in the Stream will have moved on when this method returns.
+	 * </p>
+	 * <p>
+	 * To allow the reuse of the Stream in other parts of your code in a way that it is unaware of
+	 * any data read via this method i.e. the Stream position will be returned to where it was when this method was called,
+	 * it is IMPORTANT to utilise the mark() and reset() methods within your implementing method. If you do not care about the
+	 * position for further reading you can ignore their use but the utility will still throw a MimeException if the Stream
+	 * does not support the mark() and reset() methods.
+	 * </p>
+	 * @param in InputStream.
 	 *
-	 * @param in InputStream. If the InputStream does not support the mark() and reset() methods it will throw an exception.
 	 * @return collection of matched MimeType(s)
 	 * @throws UnsupportedOperationException
 	 */

@@ -18,14 +18,16 @@ package eu.medsea.mimeutil.detector;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import eu.medsea.mimeutil.MimeException;
 import eu.medsea.mimeutil.MimeType;
@@ -93,18 +95,14 @@ import eu.medsea.mimeutil.MimeUtil;
  */
 public class ExtensionMimeDetector extends MimeDetector {
 
-	private static Log log = LogFactory.getLog(ExtensionMimeDetector.class);
-
-	// Initialise this MimeDetector and automatically register it with MimeUtil
-	static {
-		initMimeTypes();
-		MimeUtil.addMimeDetector(new ExtensionMimeDetector());
-	}
+	private static Logger log = LoggerFactory.getLogger(ExtensionMimeDetector.class);
 
 	// Extension MimeTypes
 	private static Map extMimeTypes;
 
-	public ExtensionMimeDetector() {}
+	public ExtensionMimeDetector() {
+		ExtensionMimeDetector.initMimeTypes();
+	}
 
 	public String getDescription() {
 		return "Get the mime types of file extensions";
@@ -200,26 +198,34 @@ public class ExtensionMimeDetector extends MimeDetector {
 								e);
 			}
 
+
+			// Load any classpath provided mime types that either extend or
+			// override the default mime type entries. Could also be in jar files.
+			// Get an enumeration of all files on the classpath with this name. They could be in jar files as well
 			try {
-				// Load any classpath provided mime types that either extend or
-				// override the default mime type entries
-				InputStream is = MimeUtil.class.getClassLoader()
-						.getResourceAsStream("mime-types.properties");
-				if (is != null) {
-					log
-							.debug("Found a custom mime-types.properties file on the classpath.");
-					Properties props = new Properties();
-					props.load(is);
-					if (props.size() > 0) {
-						extMimeTypes.putAll(props);
+				Enumeration e = MimeUtil.class.getClassLoader().getResources("mime-types.properties");
+				while(e.hasMoreElements()) {
+					URL url = (URL)e.nextElement();
+					if(log.isDebugEnabled()) {
+						log.debug("Found custom mime-types.properties file on the classpath [" + url + "].");
 					}
-					log
-							.debug("Successfully loaded custome mime-type.properties file from classpath.");
+					Properties props = new Properties();
+					try {
+						props.load(url.openStream());
+						if(props.size() > 0) {
+							extMimeTypes.putAll(props);
+							if(log.isDebugEnabled()) {
+								log.debug("Successfully loaded custome mime-type.properties file [" + url + "] from classpath.");
+							}
+						}
+					}catch(Exception ex) {
+						log.error("Failed while loading custom mime-type.properties file [" + url + "] from classpath. File will be ignored.");
+					}
 				}
-			} catch (Exception e) {
-				log
-						.error("Failed to load the mime-types.properties file located on the classpath. File will be ignored.");
+			}catch(Exception e) {
+				log.error("Problem while processing mime-types.properties files(s) from classpath. Files will be ignored.", e);
 			}
+
 			try {
 				// Load any mime extension mappings file defined with the JVM
 				// property -Dmime-mappings=../my/custom/mappings.properties
@@ -245,7 +251,7 @@ public class ExtensionMimeDetector extends MimeDetector {
 										+ "].");
 					}
 				}
-			} catch (Exception e) {
+			} catch (Exception ex) {
 				log
 						.error("Failed to load the mime-mappings file defined by the property -Dmime-mappings ["
 								+ System.getProperty("mime-mappings") + "].");

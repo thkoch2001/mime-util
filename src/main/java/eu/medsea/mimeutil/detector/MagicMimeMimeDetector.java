@@ -23,18 +23,20 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.io.Reader;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import eu.medsea.mimeutil.MimeException;
 import eu.medsea.mimeutil.MimeUtil;
@@ -139,9 +141,9 @@ import eu.medsea.mimeutil.MimeUtil;
  */
 public class MagicMimeMimeDetector extends MimeDetector {
 
-	private static Log log = LogFactory.getLog(MagicMimeMimeDetector.class);
+	private static Logger log = LoggerFactory.getLogger(MagicMimeMimeDetector.class);
 
-	// Having the defaultLocations as protected allows you to override this class
+	// Having the defaultLocations as protected allows you to subclass this class
 	// and add different paths or remove them all so that the internal file is always used
 	protected static String[] defaultLocations = { "/usr/share/mimelnk/magic",
 			"/usr/share/file/magic.mime", "/etc/magic.mime" };
@@ -150,13 +152,8 @@ public class MagicMimeMimeDetector extends MimeDetector {
 
 	private static ArrayList mMagicMimeEntries = new ArrayList();
 
-	// Initialise this MimeDetector and automatically register it with MimeUtil
-	static {
-		initMagicRules();
-		MimeUtil.addMimeDetector(new MagicMimeMimeDetector());
-	}
-
 	public MagicMimeMimeDetector() {
+		MagicMimeMimeDetector.initMagicRules();
 	}
 
 	public String getDescription() {
@@ -310,31 +307,25 @@ public class MagicMimeMimeDetector extends MimeDetector {
 									+ "]. File will be ignored.", e);
 		}
 
-		// Try to locate a magic.mime file on the classpath
+		// Try to locate a magic.mime file(s) on the classpath
+
+		// Get an enumeration of all files on the classpath with this name. They could be in jar files as well
 		try {
-			is = MimeUtil.class.getClassLoader().getResourceAsStream(
-					"magic.mime");
-			try {
-				if (is != null) {
-					parse("classpath:magic-mime", new InputStreamReader(is));
+			Enumeration en = MimeUtil.class.getClassLoader().getResources("magic.mime");
+			while(en.hasMoreElements()) {
+				URL url = (URL)en.nextElement();
+				try {
+					parse("classpath:[" + url + "]", new InputStreamReader(url.openStream()));
+				}catch(Exception ex) {
+					log.error(
+							"Failed to parse magic.mime rule file [" + url + "] on the classpath. File will be ignored.",
+							ex);
+
 				}
-			} finally {
-				if (is != null) {
-					try {
-						is.close();
-					} catch (Exception e) {
-						// ignore, but log in debug mode
-						if (log.isDebugEnabled())
-							log.debug(e.getMessage(), e);
-					}
-					is = null;
-				}
+
 			}
-		} catch (Exception e) {
-			log
-					.error(
-							"Failed to parse magic.mime rule file on the classpath. File will be ignored.",
-							e);
+		}catch(Exception e) {
+			log.error("Problem while processing magic.mime files from classpath. Files will be ignored.", e);
 		}
 
 		// Now lets see if we have one in the users home directory. This is
@@ -368,7 +359,7 @@ public class MagicMimeMimeDetector extends MimeDetector {
 							"Failed to parse .magic.mime file from the users home directory. File will be ignored.",
 							e);
 		}
-		// Now lets see if we have an environment variable names MAGIC set. This
+		// Now lets see if we have an environment variable named MAGIC set. This
 		// would normally point to a magic or magic.mgc file.
 		// As we don't use these file types we will look to see if there is also
 		// a magic.mime file at this location for us to use.
@@ -456,9 +447,8 @@ public class MagicMimeMimeDetector extends MimeDetector {
 		for (Iterator itFile = magicMimeFiles.iterator(); itFile.hasNext();) {
 			File f = (File) itFile.next();
 			try {
-				is = new FileInputStream(f);
 				if (f.exists()) {
-					parse(f.getAbsolutePath(), new InputStreamReader(is));
+					parse(f.getAbsolutePath(), new InputStreamReader(is = new FileInputStream(f)));
 				}
 			} catch (Exception e) {
 				log.warn(e.getMessage());

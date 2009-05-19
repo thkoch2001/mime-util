@@ -59,8 +59,8 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import eu.medsea.mimeutil.MimeException;
 import eu.medsea.mimeutil.MimeType;
@@ -68,19 +68,12 @@ import eu.medsea.mimeutil.MimeUtil;
 
 public class OpendesktopMimeDetector extends MimeDetector {
 
-	private static Log log = LogFactory.getLog(OpendesktopMimeDetector.class);
+	private static Logger log = LoggerFactory.getLogger(OpendesktopMimeDetector.class);
 
 	private static String mimeCacheFile = "/usr/share/mime/mime.cache";
 	private static String internalMimeCacheFile = "src/main/resources/mime.cache";
 
 	private ByteBuffer content;
-
-	static {
-		// This will cause this MimeDetector to be automatically
-		// registerd when you create a new instance in your code
-		// or by uncommenting the entry in the MimeDetectors file
-		MimeUtil.addMimeDetector(new OpendesktopMimeDetector());
-	}
 
 	public OpendesktopMimeDetector(final String mimeCacheFile) {
 		init(mimeCacheFile);
@@ -110,7 +103,7 @@ public class OpendesktopMimeDetector extends MimeDetector {
 				try {
 			    rCh.close();
 				}catch(Exception e) {
-					log.error(e, e);
+					log.error(e.getLocalizedMessage(), e);
 				}
 			}
 		}
@@ -147,29 +140,37 @@ public class OpendesktopMimeDetector extends MimeDetector {
 				// The URL method will also use the java URLConnection getContentType() if there are no matches
 				Collection _mimeTypes = getMimeTypes(file.toURI().toURL().openConnection());
 				if(!_mimeTypes.isEmpty()) {
-					// Check for same mime type
-					for(Iterator it = mimeTypes.iterator(); it.hasNext();) {
-						String mimeType = (String)it.next();
-						if(_mimeTypes.contains(mimeType)) {
-							mimeTypes = new ArrayList();
-							mimeTypes.add(mimeType);
-							return mimeTypes;
-						}
-						// Check for mime type subtype
-						for(Iterator _it = _mimeTypes.iterator(); _it.hasNext();) {
-							String _mimeType = (String)_it.next();
-							if(isMimeTypeSubclass(mimeType, _mimeType)) {
-								mimeTypes = new ArrayList();
+					if(!mimeTypes.isEmpty()) {
+						// more than one glob matched
+
+						// Check for same mime type
+						for(Iterator it = mimeTypes.iterator(); it.hasNext();) {
+							String mimeType = (String)it.next();
+							if(_mimeTypes.contains(mimeType)) {
+								// mimeTypes = new ArrayList();
 								mimeTypes.add(mimeType);
-								return mimeTypes;
+								// return mimeTypes;
+							}
+							// Check for mime type subtype
+							for(Iterator _it = _mimeTypes.iterator(); _it.hasNext();) {
+								String _mimeType = (String)_it.next();
+								if(isMimeTypeSubclass(mimeType, _mimeType)) {
+									// mimeTypes = new ArrayList();
+									mimeTypes.add(mimeType);
+									// return mimeTypes;
+								}
 							}
 						}
+					} else {
+						// No globs matched but we have magic matches
+						return _mimeTypes;
 					}
 				}
 			}catch(Exception e) {
 				throw new MimeException(e);
 			}
 		}
+
 		return mimeTypes;
 	}
 
@@ -181,9 +182,7 @@ public class OpendesktopMimeDetector extends MimeDetector {
 	 */
 	public Collection getMimeTypesInputStream(InputStream in)
 			throws UnsupportedOperationException {
-		Collection mimeTypes = new ArrayList();
-		lookupMimeTypesForMagicData(in, mimeTypes);
-		return mimeTypes;
+		return lookupMimeTypesForMagicData(in);
 	}
 
 	/**
@@ -194,9 +193,7 @@ public class OpendesktopMimeDetector extends MimeDetector {
 	 */
 	public Collection getMimeTypesByteArray(byte[] data)
 			throws UnsupportedOperationException {
-		List mimeTypes = new ArrayList();
-		lookupMagicData(data, mimeTypes);
-		return mimeTypes;
+		return lookupMagicData(data);
 	}
 
 	public String dump() {
@@ -213,11 +210,13 @@ public class OpendesktopMimeDetector extends MimeDetector {
 		" GENERIC_ICONS_LIST_OFFSET=" + getGenericIconListOffset() + "}";
 	}
 
-	private void lookupMimeTypesForMagicData(InputStream in, Collection mimeTypes) {
+	private Collection lookupMimeTypesForMagicData(InputStream in) {
 
 		int offset = 0;
 		int len = getMaxExtents();
 		byte [] data = new byte [len];
+		// Mark the input stream
+		in.mark(len);
 
 		try {
 			// Since an InputStream might return only some data (not all
@@ -236,11 +235,20 @@ public class OpendesktopMimeDetector extends MimeDetector {
 		}
 		catch(IOException ioe) {
 			throw new MimeException(ioe);
+		} finally {
+			try {
+				// Reset the input stream to where it was marked.
+				in.reset();
+			}catch(Exception e) {
+				throw new MimeException(e);
+			}
 		}
-		lookupMagicData(data, mimeTypes);
+		return lookupMagicData(data);
 	}
 
-	private void lookupMagicData(byte [] data, Collection mimeTypes) {
+	private Collection lookupMagicData(byte [] data) {
+
+		Collection mimeTypes = new ArrayList();
 
 		int listOffset = getMagicListOffset();
 		int numEntries = content.getInt(listOffset);
@@ -255,10 +263,12 @@ public class OpendesktopMimeDetector extends MimeDetector {
 				mimeTypes.remove(nonMatch);
 			}
 		}
+
+		return mimeTypes;
 	}
 
 	private String compareToMagicData(int offset, byte [] data) {
-		int priority = content.getInt(offset);
+		// int priority = content.getInt(offset);
 		int mimeOffset = content.getInt(offset + 4);
 		int numMatches = content.getInt(offset + 8);
 		int matchletOffset = content.getInt(offset + 12);
@@ -384,12 +394,12 @@ public class OpendesktopMimeDetector extends MimeDetector {
 		}
 
 		// Could possibly have multiple mimeTypes here with the same weight and
-		// pattern length. Can even multiple entries for the same type so lets remove
+		// pattern length. Can even have multiple entries for the same type so lets remove
 		// any duplicates by copying entries to a HashSet that can only have a single instance
 		// of each type
 		Collection _mimeTypes = new HashSet();
 		for(Iterator it = mimeTypes.iterator(); it.hasNext();) {
-			_mimeTypes.add(it.next());
+			_mimeTypes.add(((WeightedMimeType)it.next()).toString());
 		}
 		return _mimeTypes;
 	}
@@ -469,6 +479,8 @@ public class OpendesktopMimeDetector extends MimeDetector {
 	}
 
 	class WeightedMimeType extends MimeType {
+
+		private static final long serialVersionUID = 1L;
 		String pattern;
 		int weight;
 
@@ -490,10 +502,10 @@ public class OpendesktopMimeDetector extends MimeDetector {
 
 		while(max >= min) {
 			int mid = (min + max) / 2;
-			content.position((aliasListOffset + 4) + (mid * 8));
+			//content.position((aliasListOffset + 4) + (mid * 8));
 
-			int aliasOffset = content.getInt();
-			int mimeOffset = content.getInt();
+			int aliasOffset = content.getInt((aliasListOffset + 4) + (mid * 8));
+			int mimeOffset = content.getInt((aliasListOffset + 4) + (mid * 8) + 4);
 
 			int cmp = getMimeType(aliasOffset).compareTo(alias);
 			if(cmp < 0) {
@@ -649,7 +661,8 @@ public class OpendesktopMimeDetector extends MimeDetector {
 	 * @throws Exception
 	 */
 	public static void main(String [] args) throws Exception {
-		OpendesktopMimeDetector mimeDetector = new OpendesktopMimeDetector();
+		MimeUtil.registerMimeDetector("eu.medsea.mimeutil.detector.OpendesktopMimeDetector");
+		OpendesktopMimeDetector mimeDetector = (OpendesktopMimeDetector)MimeUtil.getMimeDetector("eu.medsea.mimeutil.detector.OpendesktopMimeDetector");
 		log.debug(mimeDetector.dump());
 
 
@@ -674,7 +687,6 @@ public class OpendesktopMimeDetector extends MimeDetector {
 		for(Iterator it = mimeTypes.iterator(); it.hasNext();) {
 			System.out.println(fileName + "=" + it.next() );
 		}
-		MimeUtil.addMimeDetector(mimeDetector);
 		fileName = "/projects/mimeutil/src/test/resources/e-svg.img";
 		mimeTypes = MimeUtil.getMimeTypes(new File(fileName));
 		for(Iterator it = mimeTypes.iterator(); it.hasNext();) {
@@ -709,9 +721,6 @@ public class OpendesktopMimeDetector extends MimeDetector {
 			System.out.println(fileName + "=" + it.next() );
 		}
 
-		// Deregister the default mime detectors and only use the current one
-		MimeUtil.removeMimeDetector(MimeUtil.getMimeDetector("eu.medsea.mimeutil.detector.MagicMimeMimeDetector"));
-		MimeUtil.removeMimeDetector(MimeUtil.getMimeDetector("eu.medsea.mimeutil.detector.ExtensionMimeDetector"));
 		mimeTypes = MimeUtil.getMimeTypes(new File(fileName));
 		for(Iterator it = mimeTypes.iterator(); it.hasNext();) {
 			System.out.println(fileName + "=" + it.next() );
@@ -724,7 +733,7 @@ public class OpendesktopMimeDetector extends MimeDetector {
 			System.out.println(fileName + "=" + it.next() );
 		}
 
-		mimeTypes = MimeUtil.getMimeTypes(new File(fileName).toURL().openConnection());
+		mimeTypes = MimeUtil.getMimeTypes(new File(fileName).toURI().toURL().openConnection());
 		for(Iterator it = mimeTypes.iterator(); it.hasNext();) {
 			System.out.println(fileName + "=" + it.next() );
 		}

@@ -49,6 +49,9 @@ public class MimeTypeTest extends TestCase {
 	public final void testGetSpecificity() {
 		MimeTypeHashSet mimeTypes = new MimeTypeHashSet();
 		MimeType mt = new MimeType("text/plain");
+		// This is the first MimeType added with this media and sub type
+		// and adding mime type with the same media and sub types will update
+		// only the specificity of the entry
 		mimeTypes.add(mt);
 
 		assertTrue(mt.getSpecificity() == 1);
@@ -65,7 +68,13 @@ public class MimeTypeTest extends TestCase {
 		mt2.setSpecificity(6);
 		mimeTypes.add(mt2);
 
+		// Make sure that a new MimeType as well as the original are given the same specificity
+		assertTrue(mt2.getSpecificity() == 10);
 		assertTrue(mt.getSpecificity() == 10);
+
+		// Make sure that setting the original reference to null does not remove it from the collection
+		mt = null;
+		assertTrue(mimeTypes.contains("text/plain"));
 	}
 
 	public final void testCompareTo() {

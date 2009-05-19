@@ -21,6 +21,16 @@ public class MimeUtilTest extends TestCase {
 		UNKNOWN_MIME_TYPE_COLLECTION.add(UNKNOWN_MIME_TYPE);
 	}
 
+	public void setUp() {
+		MimeUtil.registerMimeDetector("eu.medsea.mimeutil.detector.MagicMimeMimeDetector");
+		MimeUtil.registerMimeDetector("eu.medsea.mimeutil.detector.ExtensionMimeDetector");
+	}
+
+	public void tearDown() {
+		MimeUtil.unregisterMimeDetector("eu.medsea.mimeutil.detector.MagicMimeMimeDetector");
+		MimeUtil.unregisterMimeDetector("eu.medsea.mimeutil.detector.ExtensionMimeDetector");
+	}
+
 	public void testMimeTypesEquals() {
 		MimeType mt1 = new MimeType("application/xml");
 		MimeType mt2 = new MimeType("application/xml");
