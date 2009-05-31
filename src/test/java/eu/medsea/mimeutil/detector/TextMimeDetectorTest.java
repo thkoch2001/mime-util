@@ -4,28 +4,29 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+// import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 
 import eu.medsea.mimeutil.MimeType;
 import eu.medsea.mimeutil.MimeUtil;
-import eu.medsea.mimeutil.TextFileMimeDetector;
+import eu.medsea.mimeutil.TextMimeDetector;
 import eu.medsea.mimeutil.TextMimeType;
 import eu.medsea.mimeutil.handler.TextMimeHandler;
 import eu.medsea.util.EncodingGuesser;
 
 import junit.framework.TestCase;
 
-public class TextFileMimeDetectorTest extends TestCase {
+public class TextMimeDetectorTest extends TestCase {
 
 	static {
-		// We can never register or unregister the TextFileMimeDetector. This is coded in and will
+		// We can never register or unregister the TextMimeDetector. This is coded in and will
 		// be used only when no mime type has been returned from any other registered MimeDetector.
 
 		// In this case there are NO other registered MimeDetectors so it acts as a default.
 		// The following would result in an Exception being thrown
-		// MimeUtil.registerMimeDetector("eu.medsea.mimeutil.TextFileMimeDetector");
+		// MimeUtil.registerMimeDetector("eu.medsea.mimeutil.TextMimeDetector");
 
 
 	}
@@ -39,7 +40,7 @@ public class TextFileMimeDetectorTest extends TestCase {
 		EncodingGuesser.setSupportedEncodings(new ArrayList());
 	}
 
-	// We don't register any MimeDetector(s) so the default TextFileMimeDetector will be used
+	// We don't register any MimeDetector(s) so the default TextMimeDetector will be used
 
 	public void testGetMimeTypesFile() {
 
@@ -135,7 +136,7 @@ public class TextFileMimeDetectorTest extends TestCase {
 		}
 	}
 
-	public void testGetMimeTypesStream() {
+	public void testGetMimeTypesInputStream() {
 		try {
 
 			assertTrue(MimeUtil.getMimeTypes(new File("src/test/resources/a.html").toURI().toURL().openStream()).contains("text/plain"));
@@ -163,7 +164,7 @@ public class TextFileMimeDetectorTest extends TestCase {
 		}
 	}
 
-	public void testGetMimeTypesStreamEnsureStreamIsReset() {
+	public void testGetMimeTypesInputStreamAndEnsureStreamIsReset() {
 		try {
 			InputStream in = (new File("src/test/resources/a.html").toURI().toURL()).openStream();
 			assertTrue(MimeUtil.getMimeTypes(in).contains("text/plain"));
@@ -183,13 +184,13 @@ public class TextFileMimeDetectorTest extends TestCase {
 	}
 
 	public void testAddMimeHandler() {
-		TextFileMimeDetector.registerTextMimeHandler(new XMLHandler());
-		TextFileMimeDetector.registerTextMimeHandler(new SVGHandler());
+		TextMimeDetector.registerTextMimeHandler(new XMLHandler());
+		TextMimeDetector.registerTextMimeHandler(new SVGHandler());
 
 		// Even though the next handler would match and change the mime subType it
 		// will never fire as the SVGHandler returns true from it's handle(...)
 		// method so no further Handler(s) will fire
-		TextFileMimeDetector.registerTextMimeHandler(new NeverFireHandler());
+		TextMimeDetector.registerTextMimeHandler(new NeverFireHandler());
 
 		Collection c = MimeUtil.getMimeTypes("src/test/resources/e.xml");
 		assertTrue(c.size() == 1);
@@ -199,6 +200,21 @@ public class TextFileMimeDetectorTest extends TestCase {
 		assertTrue(c.size() == 1);
 		assertTrue(c.contains("image/svg+xml"));
 	}
+
+	/* We will add here new test for URL's that do not require an Internet connection
+	 * so that the build will always work.
+	public void testGetMimeTypesURL() {
+		try {
+			URL url = new URL("http://www.google.com/index.html");
+			Collection mimeTypes = MimeUtil.getMimeTypes(url);
+			assertTrue(mimeTypes.contains("text/plain"));
+
+		}catch(Exception e) {
+			fail("Should never get here");
+		}
+	}
+	*/
+
 
 	class XMLHandler implements TextMimeHandler {
 

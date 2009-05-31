@@ -20,4 +20,28 @@
     <echo message="Please run: $ant -projecthelp"/>
   </target>
 
+  <property name="bnd.version" value="0.0.311"/>
+
+  <target name="get-bnd"
+          depends="test-offline"
+          description="Download BND tool"
+          unless="maven.mode.offline">
+    <mkdir dir="${maven.repo.local}"/>
+    <mkdir dir="${maven.repo.local}/biz/aQute/bnd/${bnd.version}"/>
+    <get src="http://www.aqute.biz/repo/biz/aQute/bnd/${bnd.version}/bnd-${bnd.version}.jar"
+         dest="${maven.repo.local}/biz/aQute/bnd/${bnd.version}/bnd-${bnd.version}.jar"
+         usetimestamp="true"
+         ignoreerrors="true"/>
+  </target>
+
+  <target name="package" depends="compile,test,get-bnd" description="Package the bundle">
+    <taskdef resource="aQute/bnd/ant/taskdef.properties">
+      <classpath>
+        <pathelement location="${maven.repo.local}/biz/aQute/bnd/${bnd.version}/bnd-${bnd.version}.jar"/>
+      </classpath>
+    </taskdef>
+    <pathconvert property="bnd.classpath" refid="build.classpath" pathsep=","/>
+    <bnd files="maven-build.bnd" classpath="${maven.build.outputDir},${bnd.classpath}"/>
+  </target>
+
 </project>

@@ -1,9 +1,7 @@
 <projectDescription>
   <name>mime-util</name>
-  <comment>mime-util is a simple to use, small, light weight and fast open source java utility library that can detect the mime types of files and streams.
-		Due to the use of regular expressions and the java.nio packages it requires at least Java 1.4.
-		mime-util uses file extension mappings and the magic.mime rules files located on your system as used by the Unix file(1) command.
-		For OS&apos;s that do not support the Unix file(1) command, such as Windows, the library comes pre-packaged with a generic magic.mime file.</comment>
+  <comment>mime-util is a simple to use, small, light weight and fast open source java utility library that can detect MIME types from files, input streams, URL&apos;s and byte arrays.
+		Due to the use of regular expressions and the java.nio packages it requires at least Java 1.4.</comment>
   <projects/>
   <buildSpec>
     <buildCommand>

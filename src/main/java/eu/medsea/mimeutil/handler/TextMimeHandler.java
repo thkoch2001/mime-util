@@ -19,14 +19,14 @@ import eu.medsea.mimeutil.TextMimeType;
 
 /**
  * This interface is to be implemented by all TextMmeDetector(s)
- * that are registered with the TextFileMimeDetector
+ * that are registered with the TextMimeDetector
  * <p>
  * A scenario in which you would want to use this feature is when
  * handling text files that are ultimately XML type files.
  * </p>
  * <p>
  * These handlers are given a chance to influence the returned
- * MimeType present in the Collection returned from the TextFileMimeDetector
+ * MimeType present in the Collection returned from the TextMimeDetector
  * that is pre-registered with mime-util. Each TextMimeHandler will
  * be called in the order they are registered. If the handle(...) method
  * returns true, no more handlers will be called but if handle(...) returns false
@@ -47,7 +47,7 @@ import eu.medsea.mimeutil.TextMimeType;
  * </p>
  * <p>
  * For some VERY basic implementations of TextMimeHandler(s) using string functions see the unit tests for
- * the TextFileMimeDetector. For your implementations you will probably want to use regular expressions
+ * the TextMimeDetector. For your implementations you will probably want to use regular expressions
  * to determine content or even to decide if this handler is interested in the content.
  * </p>
  * <p>
@@ -70,5 +70,5 @@ public interface TextMimeHandler {
 	 * false means that the next registered TextMimeHandler in the list gets a chance to also change
 	 * the MimeType and encoding.
 	 */
-	public boolean handle(TextMimeType mimeType, String content);
+	public boolean handle(final TextMimeType mimeType, final String content);
 }

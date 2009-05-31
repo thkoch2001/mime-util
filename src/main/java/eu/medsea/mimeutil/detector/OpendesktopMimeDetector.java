@@ -13,6 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package eu.medsea.mimeutil.detector;
+
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.RandomAccessFile;
+import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import eu.medsea.mimeutil.MimeException;
+import eu.medsea.mimeutil.MimeType;
+import eu.medsea.mimeutil.MimeUtil;
+
 /**
  * <p>
  * The Opendesktop shared mime database contains glob rules and magic number
@@ -40,32 +67,6 @@
  * </p>
  * @author Steven McArdle
  */
-package eu.medsea.mimeutil.detector;
-
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import eu.medsea.mimeutil.MimeException;
-import eu.medsea.mimeutil.MimeType;
-import eu.medsea.mimeutil.MimeUtil;
-
 public class OpendesktopMimeDetector extends MimeDetector {
 
 	private static Logger log = LoggerFactory.getLogger(OpendesktopMimeDetector.class);
@@ -111,6 +112,27 @@ public class OpendesktopMimeDetector extends MimeDetector {
 
 	public String getDescription() {
 		return "Resolve mime types for files and streams using the Opendesktop shared mime.cache file. Version [" + getMajorVersion() + "." + getMinorVersion() + "].";
+	}
+
+	/**
+	 * Defer URL calls to the getMimeTypesFile(File file) and then the getMimeInputStream(InputStream in) method if
+	 * no mime types were returned
+	 */
+	public Collection getMimeTypesURL(URL url)
+			throws UnsupportedOperationException {
+		Collection mimeTypes = new ArrayList();
+
+		try {
+			// First try using getMimeTypesFile(File file)
+			mimeTypes = getMimeTypesFile(new File(url.getPath()));
+			if(mimeTypes.isEmpty()) {
+				// Failed to get any mime types for the extension or file name glob so try the content
+				mimeTypes = getMimeTypesInputStream(new BufferedInputStream(url.openStream()));
+			}
+		} catch (IOException e) {
+			throw new MimeException(e);
+		}
+		return mimeTypes;
 	}
 
 	/**
@@ -733,7 +755,7 @@ public class OpendesktopMimeDetector extends MimeDetector {
 			System.out.println(fileName + "=" + it.next() );
 		}
 
-		mimeTypes = MimeUtil.getMimeTypes(new File(fileName).toURI().toURL().openConnection());
+		mimeTypes = MimeUtil.getMimeTypes(new File(fileName).toURI().toURL());
 		for(Iterator it = mimeTypes.iterator(); it.hasNext();) {
 			System.out.println(fileName + "=" + it.next() );
 		}

@@ -20,10 +20,12 @@
  */
 package eu.medsea.mimeutil;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -42,12 +44,12 @@ import eu.medsea.util.EncodingGuesser;
  * <p>
  * You can influence this MimeDetector in several ways.
  * <ul>
- * <li>Specify a different list of preferred encodings using the static TextFileMimeDetector.setPreferredEncodings(...) method.</li>
+ * <li>Specify a different list of preferred encodings using the static TextMimeDetector.setPreferredEncodings(...) method.</li>
  * <li>Change the list of supported encodings using the static EncodingGuesser.setSupportedEncodings(...) method.</li>
- * <li>Register TextMimeHandler(s) using the static TextFileMimeDetector.registerTextMimeHandler(...) method (very, VERY powerful).</li>
+ * <li>Register TextMimeHandler(s) using the static TextMimeDetector.registerTextMimeHandler(...) method (very, VERY powerful).</li>
  * </ul>
  * <p>
- * The TextFileMimeDetector.setPreferredEncodings(...) method is used to provide a preferred list of encodings. The final encoding for the MimeType
+ * The TextMimeDetector.setPreferredEncodings(...) method is used to provide a preferred list of encodings. The final encoding for the MimeType
  * will be the first one in this list that is also contained in the possible encodings returned from the EncodingGuesser class. If none of
  * these match then the first entry in the possible encodings collection is used.
  * </p>
@@ -60,7 +62,7 @@ import eu.medsea.util.EncodingGuesser;
  * of this MimeDetector greatly.
  * </p>
  * <p>
- * The TextFileMimeDetector.registerTextMimeHandler(...) method can be used to register special TextMimeHandler(s). These MimeHandler(s) are
+ * The TextMimeDetector.registerTextMimeHandler(...) method can be used to register special TextMimeHandler(s). These MimeHandler(s) are
  * delegated to when once valid encodings have been found for the content contained in File, InputStream or byte []. The handlers can influence
  * both the returned MimeType and encoding of any matched content. For instance, the default behavior is to return a MimeType of text/plain and
  * encoding set according to the rules above. The Handler(s) allow you to further process the content and decide that it is in fact a text/xml
@@ -93,9 +95,9 @@ import eu.medsea.util.EncodingGuesser;
  * @author Steven McArdle
  *
  */
-public final class TextFileMimeDetector extends MimeDetector {
+public final class TextMimeDetector extends MimeDetector {
 
-	private static Logger log = LoggerFactory.getLogger(TextFileMimeDetector.class);
+	private static Logger log = LoggerFactory.getLogger(TextMimeDetector.class);
 
 	// The maximum amount of data to retrieve from a stream
 	private static final int BUFFER_SIZE = 1024;
@@ -105,19 +107,19 @@ public final class TextFileMimeDetector extends MimeDetector {
 
 	private static Collection preferredEncodings = new ArrayList();
 	static {
-		TextFileMimeDetector.setPreferredEncodings(new String [] {"UTF-16", "UTF-8", "ISO-8859-1", "windows-1252", "US-ASCII"} );
+		TextMimeDetector.setPreferredEncodings(new String [] {"UTF-16", "UTF-8", "ISO-8859-1", "windows-1252", "US-ASCII"} );
 	}
 
 	// Registered list of TextMimeHandler(s)
 	private static Collection handlers = new ArrayList();
 
 	// Private so nobody can register one using the MimeUtil.registerMimeDetector(...) method
-	private TextFileMimeDetector() {
+	private TextMimeDetector() {
 	}
 
 	// Package scoped so that the class can still be create for use by mime-util without resorting to a singleton approach
 	// Could change this in the future !!!
-	TextFileMimeDetector(int dummy) {
+	TextMimeDetector(int dummy) {
 		this();
 	}
 
@@ -126,6 +128,19 @@ public final class TextFileMimeDetector extends MimeDetector {
 	 */
 	public String getDescription() {
 		return "Determine if a file or stream contains a text mime type. If so then return TextMimeType with text/plain and the best guess encoding.";
+	}
+
+	/**
+	 * As this MimeDetector works only on content we get an InputStream from the URL
+	 * and defer processing to the getMimeTypesFile(File in) method
+	 */
+	public Collection getMimeTypesURL(URL url)
+			throws UnsupportedOperationException {
+		try {
+			return getMimeTypesInputStream(new BufferedInputStream(url.openStream()));
+		} catch (IOException e) {
+			throw new MimeException(e);
+		}
 	}
 
 	/**
@@ -142,7 +157,7 @@ public final class TextFileMimeDetector extends MimeDetector {
 
 		Collection mimeTypes = new ArrayList();
 		try {
-			mimeTypes = getMimeTypes(file.toURI().toURL().openConnection().getInputStream());
+			mimeTypes = getMimeTypesInputStream(file.toURI().toURL().openStream());
 		}catch(UnsupportedOperationException uoe) {
 			throw uoe;
 		}catch(Exception e) {
@@ -159,7 +174,7 @@ public final class TextFileMimeDetector extends MimeDetector {
 			throws UnsupportedOperationException {
 
 		int offset = 0;
-		int len = TextFileMimeDetector.BUFFER_SIZE;
+		int len = TextMimeDetector.BUFFER_SIZE;
 		byte [] data = new byte [len];
 		byte [] copy = null;
 		// Mark the input stream
@@ -228,7 +243,7 @@ public final class TextFileMimeDetector extends MimeDetector {
 
 		String encoding = null;
 		// Iterate over the preferedEncodings array in the order defined and return the first one found
-		for(Iterator it = TextFileMimeDetector.preferredEncodings.iterator(); it.hasNext();) {
+		for(Iterator it = TextMimeDetector.preferredEncodings.iterator(); it.hasNext();) {
 			encoding = (String)it.next();
 			if(possibleEncodings.contains(encoding)) {
 				mimeTypes.add(new TextMimeType("text/plain", encoding));
@@ -241,7 +256,7 @@ public final class TextFileMimeDetector extends MimeDetector {
 			mimeTypes.add(new TextMimeType("text/plain", encoding));
 		}
 
-		// If none of our preferedEncodings or the default encoding are in the possible encodings list we return the first possibleEncoding;
+		// If none of our preferredEncodings or the default encoding are in the possible encodings list we return the first possibleEncoding;
 		if(mimeTypes.isEmpty()) {
 			Iterator it = possibleEncodings.iterator();
 			encoding = (String)it.next();
@@ -278,9 +293,9 @@ public final class TextFileMimeDetector extends MimeDetector {
 	 * @param encodings String array of canonical encoding names.
 	 */
 	public static void setPreferredEncodings(String [] encodings) {
-		TextFileMimeDetector.preferredEncodings = EncodingGuesser.getValidEncodings(encodings);
+		TextMimeDetector.preferredEncodings = EncodingGuesser.getValidEncodings(encodings);
 		if(log.isDebugEnabled()) {
-			log.debug("Preferred Encodings set to " + TextFileMimeDetector.preferredEncodings);
+			log.debug("Preferred Encodings set to " + TextMimeDetector.preferredEncodings);
 		}
 	}
 

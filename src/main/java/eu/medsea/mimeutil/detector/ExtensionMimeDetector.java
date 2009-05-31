@@ -290,4 +290,14 @@ public class ExtensionMimeDetector extends MimeDetector {
 			throws UnsupportedOperationException {
 		throw new UnsupportedOperationException("This MimeDetector does not support detection from byte arrays.");
 	}
+
+	/**
+	 * This MimeDetector only works with file extensions so we get the file name part of
+	 * the URL and defer processing to the getMimeTypesFile(File file) method
+	 */
+	public Collection getMimeTypesURL(URL url)
+			throws UnsupportedOperationException {
+		return getMimeTypesFile(new File(url.getPath()));
+
+	}
 }

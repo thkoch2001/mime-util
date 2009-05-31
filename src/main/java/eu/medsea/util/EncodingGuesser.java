@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * This class contains a list of known encodings used by TextMimeType.
- * It is used by the TextFileMimeDetector but can be used as a stand alone utility class
+ * It is used by the TextMimeDetector but can be used as a stand alone utility class
  * in other parts of your program if you want.
  * <p>
  * The getPossibleEncodings() method takes a byte [] as its source and the bigger the
@@ -219,7 +219,7 @@ public class EncodingGuesser {
 	 * Get a Collection containing entries in both the supported encodings
 	 * and the passed in String [] of encodings.
 	 *
-	 * This is used by TextFileMimeDetector to get a valid list of the preferred encodings.
+	 * This is used by TextMimeDetector to get a valid list of the preferred encodings.
 	 * @param encodings
 	 * @return a Collection containing all valid encodings contained in the passed in encodings array
 	 */

@@ -15,6 +15,7 @@
  */
 package eu.medsea.mimeutil.detector;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -168,7 +169,7 @@ public class MagicMimeMimeDetector extends MimeDetector {
 	 * @throws MimeException if for instance we try to match beyond the end of the data.
 	 */
 	public Collection getMimeTypesByteArray(final byte[] data)
-			throws MimeException {
+			throws UnsupportedOperationException {
 		Collection mimeTypes = new LinkedHashSet();
 		int len = mMagicMimeEntries.size();
 		try {
@@ -186,6 +187,19 @@ public class MagicMimeMimeDetector extends MimeDetector {
 	}
 
 	/**
+	 * This MimeDetector works on content so defer to the getMimeTypesInputStream(InputStream in) method
+	 */
+	public Collection getMimeTypesURL(URL url) {
+		try {
+			return getMimeTypesInputStream(new BufferedInputStream(url.openStream()));
+		} catch (UnsupportedOperationException uoe) {
+			throw uoe;
+		} catch (IOException e) {
+			throw new MimeException(e);
+		}
+	}
+
+	/**
 	 * Get the mime types of the data in the specified {@link InputStream}.
 	 * Therefore, the <code>InputStream</code> must support mark and reset (see
 	 * {@link InputStream#markSupported()}). If it does not support mark and
@@ -199,7 +213,7 @@ public class MagicMimeMimeDetector extends MimeDetector {
 	 *             mark and reset (see {@link InputStream#markSupported()}).
 	 */
 	public Collection getMimeTypesInputStream(final InputStream in)
-			throws MimeException {
+			throws UnsupportedOperationException {
 		Collection mimeTypes = new LinkedHashSet();
 		int len = mMagicMimeEntries.size();
 		try {
@@ -226,7 +240,7 @@ public class MagicMimeMimeDetector extends MimeDetector {
 	 * @throws MimeException
 	 *             if the file cannot be parsed.
 	 */
-	public Collection getMimeTypesFile(final File file) throws MimeException {
+	public Collection getMimeTypesFile(final File file) throws UnsupportedOperationException {
 		Collection mimeTypes = new LinkedHashSet();
 		if (!file.exists()) {
 			return mimeTypes;

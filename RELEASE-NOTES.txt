@@ -15,13 +15,40 @@
  */
 
  What is mime-util?
- It's a very small lightweight extensible utility that allows Java programs to detect mime types based on file extensions and magic numbers.
- The API supports java.io.File and java.io.InputStream. It reads the system's magic files as used by the Unix file(1) command when used on a Unix OS.
- For Windows, internal resources are included in the library.
+ It's a very small lightweight extensible utility that allows Java programs to detect MIME types based on file extensions, globbing and magic data.
+ The API supports MIME type detection from java.io.File, java.io.InputStream, java.net.URL and byte arrays.
+ MimeDetector(s) provided algorithms for detecting MIME types using various sources such as, support for reading from the native magic files as used
+ by the Unix file(1) command when used on a Unix OS or internally supplied copies if running on a system that does not support the Unix file(1) command such as Windows.
 
- For a full description of mime-util please refer to the README.txt file distributed with the library.
+ For a full description of mime-util please visit the mime-util web site at http://ww.medsea.eu/mime-util.
 
- This file contains the release notes of each version of mime-util
+ This file contains important release notes for each version of mime-util.
+
+Version 2.0 Released 27-05-2009
+This is a major release for mime-util with some significant changes to the public API and the implementations of the MimeDetector(s).
+If you are currently using versions prior to 2.0 we suggest you upgrade your project to use the latest 2.x version.
+The 2.x public API has now been frozen and we will not be changing it for the foreseeable future unless absolutely necessary.
+
+ 1. All depricated classes and methods from the 1.x version have now been removed.
+ 2. New website for mime-util launched.
+ 	The new site is available at http://www.medsea.eu/mime-util and contains lots of detail regarding the workings of MimeDetector(s)
+ 	as well as examples and usage scenarios.
+ 3. eu.medsea.mimeutil.TextMimeDetector.
+ 	New MimeDetector added for text content and encoding information
+ 4. Added new utility class eu.medsea.util.EncodingGuesser. This is used by the TextMimeDetector but can be used as a stand alone
+ 	utility for you own needs.
+ 5. Only the TextMimeDetector is now enabled by default so you need to be enabled any of the others specifically via your code.
+ 	See the Java Doc or the MimeDetector(s) page available on the web site via the Documentation link.
+ 6. A new abstract method Collection getMimeTypesURL(URL url); has been added to the abstract class eu.medsea.detector.MimeDetector that
+ 	can be used in your MimeDetector(s) to detect MIME types from URL(s).
+ 7. The getMimeTypes(URLConnection url) method has been removed from the public MimeUtil API as it was not well implemented and only
+ 	deferred execution to the InputStream versions of gtMimeTypes(...). For MimeDetector(s) that work with file names or extensions,
+ 	the delegation methods were insufficient. You should now use the new getMimeTypes(...) method that takes a URL instead.
+ 8. The mime-util jar file is now also an OSGi bundle and can be use in OSGi containers such as Knoplerfish and Equinox.
+ 9. The logging calls previously dependent on commons-logging have now been replaced with logging calls to SLF4J. This was done due
+ 	to several issues other people had raised in OSGi forums regarding the use of commons-logging. We cannot testify to commons-logging
+ 	problems as we migrated the logging before packaging mime-util as an OSGi bundle.
+
 
 
  Version 1.3.1 Released 21-03-2009

@@ -3,19 +3,21 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>eu.medsea.mimeutil</groupId>
 	<artifactId>mime-util</artifactId>
-	<packaging>jar</packaging>
+	<packaging>bundle</packaging>
 	<name>Mime Detection Utility</name>
 	<organization>
 		<name>Medsea Business Solutions S.L.</name>
 	</organization>
 
+	<properties>
+		<bundle.namespace>eu.medsea</bundle.namespace>
+	</properties>
+
 	<version>2.0</version>
-	<description>mime-util is a simple to use, small, light weight and fast open source java utility library that can detect the mime types of files and streams.
+	<description>mime-util is a simple to use, small, light weight and fast open source java utility library that can detect MIME types from files, input streams, URL's and byte arrays.
 		Due to the use of regular expressions and the java.nio packages it requires at least Java 1.4.
-		mime-util uses file extension mappings and the magic.mime rules files located on your system as used by the Unix file(1) command.
-		For OS's that do not support the Unix file(1) command, such as Windows, the library comes pre-packaged with a generic magic.mime file.
 	</description>
-	<url>http://sourceforge.net/projects/mime-util/</url>
+	<url>http://www.medsea.eu/mime-util/</url>
 	<licenses>
 		<license>
 			<name>The Apache Software License, Version 2.0</name>
@@ -23,13 +25,6 @@
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
-
-	<repositories>
-		<repository>
-			<id>aQute</id>
-			<url>http://www.aQute.biz/repo</url>
-		</repository>
-	</repositories>
 
 	<build>
 		<defaultGoal>jar:jar</defaultGoal>
@@ -52,6 +47,18 @@
 		</testResources>
 		<plugins>
 			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<version>2.0.0</version>
+				<extensions>true</extensions>
+				<configuration>
+					<instructions>
+						<Export-Package>${bundle.namespace}.mimeutil,${bundle.namespace}.mimeutil.detector,${bundle.namespace}.mimeutil.handler,${bundle.namespace}.util</Export-Package>
+						<Import-Package>org.slf4j</Import-Package>
+					</instructions>
+				</configuration>
+			</plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
 				<configuration>
@@ -65,19 +72,6 @@
 						</manifestEntries>
 					</archive>
 				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.felix</groupId>
-				<artifactId>maven-bundle-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>bundle-manifest</id>
-						<phase>process-classes</phase>
-						<goals>
-							<goal>manifest</goal>
-						</goals>
-					</execution>
-				</executions>
 			</plugin>
 			<plugin>
 				<artifactId>maven-ant-plugin</artifactId>
@@ -120,7 +114,6 @@
 				<configuration>
 					<links>
 						<link>http://java.sun.com/j2se/1.4.2/docs/api/</link>
-						<link>http://jakarta.apache.org/commons/logging/apidocs/</link>
 					</links>
 					<stylesheet>maven</stylesheet>
 				</configuration>

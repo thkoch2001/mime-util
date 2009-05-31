@@ -16,10 +16,8 @@
 package eu.medsea.mimeutil;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
 
@@ -338,13 +336,5 @@ public class MimeTypeHashSetTest extends TestCase {
 		d = c.matches(".*pdf.*");
 		assertTrue(d.size() == 2);
 		assertEquals(d.toString(), "application/pdf,application/x-pdf-something");
-	}
-
-
-	public void testSyncronised() {
-
-		// Use this form for a Syncronised collection
-	     Collection c = Collections.synchronizedSet(new MimeTypeHashSet("text/a,text/b,text/c,text/d"));
-
 	}
 }
