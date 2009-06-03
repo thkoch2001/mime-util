@@ -4,6 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.Collection;
 
 import eu.medsea.mimeutil.MimeException;
@@ -24,11 +25,13 @@ public class MimeUtilTest extends TestCase {
 	public void setUp() {
 		MimeUtil.registerMimeDetector("eu.medsea.mimeutil.detector.MagicMimeMimeDetector");
 		MimeUtil.registerMimeDetector("eu.medsea.mimeutil.detector.ExtensionMimeDetector");
+		MimeUtil.registerMimeDetector("eu.medsea.mimeutil.detector.OpendesktopMimeDetector");
 	}
 
 	public void tearDown() {
 		MimeUtil.unregisterMimeDetector("eu.medsea.mimeutil.detector.MagicMimeMimeDetector");
 		MimeUtil.unregisterMimeDetector("eu.medsea.mimeutil.detector.ExtensionMimeDetector");
+		MimeUtil.unregisterMimeDetector("eu.medsea.mimeutil.detector.OpendesktopMimeDetector");
 	}
 
 	public void testMimeTypesEquals() {
@@ -160,6 +163,23 @@ public class MimeUtilTest extends TestCase {
 
 		// The following test case fails to detect properly with the OpendesktopMimeDetector
 		//assertTrue(MimeUtil.getMimeTypes(new File("src/test/resources/d-png.img")).contains("image/png"));
+	}
+
+	public void testGetMimeTypesURL() {
+		try {
+
+			assertTrue(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/MimeDetector.class")).contains("application/x-java-class"));
+			assertTrue(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/MimeDetector.java")).contains("text/x-java"));
+
+			assertTrue(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/a.html")).contains("text/html"));
+			assertTrue(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/c-gif.img")).contains("image/gif"));
+			assertTrue(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/e.svg")).contains("image/svg+xml"));
+			assertTrue(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/f.tar.gz")).contains("application/x-compressed-tar"));
+
+			assertTrue(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/e[xml]")).contains("application/xml"));
+		}catch(Exception e) {
+			fail("Should not get here " + e.getLocalizedMessage());
+		}
 	}
 
 

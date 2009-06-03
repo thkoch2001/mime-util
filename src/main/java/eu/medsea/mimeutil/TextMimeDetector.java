@@ -22,6 +22,7 @@ package eu.medsea.mimeutil;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -131,40 +132,61 @@ public final class TextMimeDetector extends MimeDetector {
 	}
 
 	/**
-	 * As this MimeDetector works only on content we get an InputStream from the URL
-	 * and defer processing to the getMimeTypesFile(File in) method
+	 * This MimeDetector requires content so defer to the file method
+	 */
+	public Collection getMimeTypesFileName(String fileName)
+			throws UnsupportedOperationException {
+		return getMimeTypesFile(new File(fileName));
+	}
+
+	/**
+	 * We only want to deal with the stream from the URL
+	 * @see MimeDetector.getMimeTypesURL(URL url)
 	 */
 	public Collection getMimeTypesURL(URL url)
 			throws UnsupportedOperationException {
+
+		InputStream in = null;
 		try {
-			return getMimeTypesInputStream(new BufferedInputStream(url.openStream()));
-		} catch (IOException e) {
+			return getMimeTypesInputStream(in = new BufferedInputStream(MimeUtil.getInputStreamFromURL(url)));
+		}catch(UnsupportedOperationException e) {
+			throw e;
+		}catch(Exception e) {
 			throw new MimeException(e);
+		}finally {
+			try {
+				in.close();
+			}catch(Exception ignore) {
+				log.error(ignore.getLocalizedMessage());
+			}
 		}
 	}
 
 	/**
-	 * @see MimeDetector.getMimeTypesFile(File file)
+	 * We only want to deal with the stream for the file
+	 * @see MimeDetector.getMimeTypesURL(URL url)
 	 */
 	public Collection getMimeTypesFile(File file)
 			throws UnsupportedOperationException {
 
-		if(!file.exists()) {
-			// If this is not a real file object pretend we don't support this method
-			// from this MimeDetector
-			throw new UnsupportedOperationException();
+		if(!file.exists() || file.isDirectory()) {
+			throw new UnsupportedOperationException("This MimeDetector requires actual content.");
 		}
-
-		Collection mimeTypes = new ArrayList();
+		InputStream in = null;
 		try {
-			mimeTypes = getMimeTypesInputStream(file.toURI().toURL().openStream());
-		}catch(UnsupportedOperationException uoe) {
-			throw uoe;
+			in = new BufferedInputStream(new FileInputStream(file));
+			return getMimeTypesInputStream(in);
+		}catch(UnsupportedOperationException e) {
+			throw e;
 		}catch(Exception e) {
 			throw new MimeException(e);
+		}finally {
+			try {
+				in.close();
+			}catch(Exception ignore) {
+				log.error(ignore.getLocalizedMessage());
+			}
 		}
-
-		return mimeTypes;
 	}
 
 	/**
@@ -211,7 +233,7 @@ public final class TextMimeDetector extends MimeDetector {
 				throw new MimeException(e);
 			}
 		}
-		return getMimeTypes(copy);
+		return getMimeTypesByteArray(copy);
 	}
 
 	/**

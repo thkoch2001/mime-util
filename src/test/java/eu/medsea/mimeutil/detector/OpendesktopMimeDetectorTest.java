@@ -1,6 +1,7 @@
 package eu.medsea.mimeutil.detector;
 
 import java.io.File;
+import java.net.URL;
 import java.util.ArrayList;
 
 import eu.medsea.mimeutil.MimeUtil;
@@ -60,6 +61,22 @@ public class OpendesktopMimeDetectorTest extends TestCase {
 		EncodingGuesser.setSupportedEncodings(new ArrayList());
 
 
+	}
+
+	public void testGetMimeTypesURL() {
+		try {
+			assertTrue(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/MimeDetector.class")).contains("application/x-java"));
+			assertTrue(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/MimeDetector.java")).contains("text/x-java"));
+
+			assertEquals(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/a.html")).toString(), "text/html");
+			assertEquals(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/c-gif.img")).toString(), "image/gif");
+			assertEquals(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/e.svg")).toString(), "image/svg+xml");
+			assertEquals(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/f.tar.gz")).toString(), "application/x-compressed-tar");
+
+			assertTrue(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/e[xml]")).contains("application/xml"));
+		}catch(Exception e) {
+			fail("Should not get here " + e.getLocalizedMessage());
+		}
 	}
 
 }

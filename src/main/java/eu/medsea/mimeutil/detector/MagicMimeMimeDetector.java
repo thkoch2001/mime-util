@@ -19,10 +19,10 @@ import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.RandomAccessFile;
 import java.io.Reader;
 import java.net.URL;
 import java.util.ArrayList;
@@ -186,18 +186,6 @@ public class MagicMimeMimeDetector extends MimeDetector {
 		return mimeTypes;
 	}
 
-	/**
-	 * This MimeDetector works on content so defer to the getMimeTypesInputStream(InputStream in) method
-	 */
-	public Collection getMimeTypesURL(URL url) {
-		try {
-			return getMimeTypesInputStream(new BufferedInputStream(url.openStream()));
-		} catch (UnsupportedOperationException uoe) {
-			throw uoe;
-		} catch (IOException e) {
-			throw new MimeException(e);
-		}
-	}
 
 	/**
 	 * Get the mime types of the data in the specified {@link InputStream}.
@@ -231,49 +219,50 @@ public class MagicMimeMimeDetector extends MimeDetector {
 	}
 
 	/**
-	 * Try to get the mime types of a file using the <code>magic.mime</code>
-	 * rules files.
-	 *
-	 * @param file
-	 *            is a {@link File} object that points to a file or directory.
-	 * @return the mime types.
-	 * @throws MimeException
-	 *             if the file cannot be parsed.
+	 * Defer this call to the File method
+	 */
+	public Collection getMimeTypesFileName(final String fileName) throws UnsupportedOperationException {
+		return getMimeTypesFile(new File(fileName));
+	}
+
+
+	/**
+	 * Defer this call to the InputStream method
+	 */
+	public Collection getMimeTypesURL(final URL url) throws UnsupportedOperationException {
+		InputStream in = null;
+		try {
+			return getMimeTypesInputStream(in = new BufferedInputStream(MimeUtil.getInputStreamFromURL(url)));
+		}catch(Exception e) {
+			throw new MimeException(e);
+		}finally {
+			try {
+				in.close();
+			}catch(Exception ignore) {
+				log.error(ignore.getLocalizedMessage());
+			}
+		}
+	}
+
+	/**
+	 * Defer this call to the InputStream method
 	 */
 	public Collection getMimeTypesFile(final File file) throws UnsupportedOperationException {
-		Collection mimeTypes = new LinkedHashSet();
-		if (!file.exists()) {
-			return mimeTypes;
-		}
-		if (file.isDirectory()) {
-			mimeTypes.add(MimeUtil.DIRECTORY_MIME_TYPE);
-			return mimeTypes;
-		}
-
-		int len = mMagicMimeEntries.size();
-		RandomAccessFile raf = null;
+		InputStream in = null;
 		try {
-			raf = new RandomAccessFile(file, "r");
-			for (int i = 0; i < len; i++) {
-				MagicMimeEntry me = (MagicMimeEntry) mMagicMimeEntries.get(i);
-				MagicMimeEntry matchingMagicMimeEntry = me.getMatch(raf);
-				if (matchingMagicMimeEntry != null) {
-					mimeTypes.add(matchingMagicMimeEntry.getMimeType());
-				}
-			}
-		} catch (Exception e) {
-			throw new MimeException("Error parsing file ["
-					+ file.getAbsolutePath() + "]", e);
-		} finally {
-			if (raf != null) {
-				try {
-					raf.close();
-				} catch (Exception e) {
-					log.error("Error closing file.", e);
-				}
+			in = new BufferedInputStream(new FileInputStream(file));
+			return getMimeTypesInputStream(in);
+		}catch(FileNotFoundException e) {
+			throw new UnsupportedOperationException(e);
+		}catch(Exception e) {
+			throw new MimeException(e);
+		}finally {
+			try {
+				in.close();
+			}catch(Exception ignore) {
+				log.error(ignore.getLocalizedMessage());
 			}
 		}
-		return mimeTypes;
 	}
 
 	/*

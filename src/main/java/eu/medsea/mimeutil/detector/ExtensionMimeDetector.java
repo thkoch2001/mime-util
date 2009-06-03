@@ -109,21 +109,42 @@ public class ExtensionMimeDetector extends MimeDetector {
 	}
 
 	/**
-	 * Get the mime type of a file using file extension mappings. The file path
-	 * can be a relative or absolute path or can be a completely non-existent file as
+	 * Get the mime type of a file using extension mappings. The file path
+	 * can be a relative or absolute path or can refer to a completely non-existent file as
 	 * only the extension is important here.
 	 *
-	 * @param file
-	 *            is a <code>File</code> object that points to a file or
-	 *            directory.
+	 * @param file points to a file or directory. May not actually exist
 	 * @return collection of the matched mime types.
-	 * @throws MimeException
-	 *             if the file cannot be parsed.
+	 * @throws MimeException if errors occur.
 	 */
 	public Collection getMimeTypesFile(final File file) throws MimeException {
+		return getMimeTypesFileName(file.getName());
+	}
+
+	/**
+	 * Get the mime type of a URL using extension mappings. Only the extension is important here.
+	 *
+	 * @param url is a valid URL
+	 * @return collection of the matched mime types.
+	 * @throws MimeException if errors occur.
+	 */
+	public Collection getMimeTypesURL(final URL url) throws MimeException {
+		return getMimeTypesFileName(url.getPath());
+	}
+
+	/**
+	 * Get the mime type of a file name using file name extension mappings. The file name path
+	 * can be a relative or absolute path or can refer to a completely non-existent file as
+	 * only the extension is important here.
+	 *
+	 * @param fileName points to a file or directory. May not actually exist
+	 * @return collection of the matched mime types.
+	 * @throws MimeException if errors occur.
+	 */
+	public Collection getMimeTypesFileName(final String fileName) throws MimeException {
 		Collection mimeTypes = new HashSet();
 
-		String fileExtension = MimeUtil.getExtension(file.getName());
+		String fileExtension = MimeUtil.getExtension(fileName);
 		while(fileExtension.length() != 0) {
 			String types = null;
 			// First try case sensitive
@@ -289,15 +310,5 @@ public class ExtensionMimeDetector extends MimeDetector {
 	public Collection getMimeTypesByteArray(byte[] data)
 			throws UnsupportedOperationException {
 		throw new UnsupportedOperationException("This MimeDetector does not support detection from byte arrays.");
-	}
-
-	/**
-	 * This MimeDetector only works with file extensions so we get the file name part of
-	 * the URL and defer processing to the getMimeTypesFile(File file) method
-	 */
-	public Collection getMimeTypesURL(URL url)
-			throws UnsupportedOperationException {
-		return getMimeTypesFile(new File(url.getPath()));
-
 	}
 }
