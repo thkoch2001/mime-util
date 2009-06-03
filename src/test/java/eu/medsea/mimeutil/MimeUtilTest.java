@@ -177,6 +177,8 @@ public class MimeUtilTest extends TestCase {
 			assertTrue(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/f.tar.gz")).contains("application/x-compressed-tar"));
 
 			assertTrue(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/e[xml]")).contains("application/xml"));
+
+			assertFalse(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/")).contains("application/xml"));
 		}catch(Exception e) {
 			fail("Should not get here " + e.getLocalizedMessage());
 		}
