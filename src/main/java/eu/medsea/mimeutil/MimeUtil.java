@@ -18,7 +18,6 @@ package eu.medsea.mimeutil;
 import java.io.File;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.JarURLConnection;
 import java.net.URL;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -40,6 +39,7 @@ import org.slf4j.LoggerFactory;
 import eu.medsea.mimeutil.detector.MimeDetector;
 import eu.medsea.util.EncodingGuesser;
 import eu.medsea.util.StringUtil;
+import eu.medsea.util.ZipJarUtil;
 
 /**
  * <p>
@@ -412,12 +412,14 @@ public class MimeUtil {
 		if(file == null) {
 			log.error("File reference cannot be null.");
 		} else {
+
 			if(log.isDebugEnabled()) {
 				log.debug("Getting mime types for file [" + file.getAbsolutePath() + "].");
 			}
 
 			if(file.isDirectory()) {
 				mimeTypes.add(MimeUtil.DIRECTORY_MIME_TYPE);
+				return mimeTypes;
 			}
 
 			// Defer this call to the file name and stream methods
@@ -471,7 +473,7 @@ public class MimeUtil {
 			log.error("InputStream reference cannot be null.");
 		} else {
 			if (!in.markSupported()) {
-				throw new MimeException("InputStream does not support mark and reset!");
+				throw new MimeException("InputStream must support the mark() and reset() methods.");
 			}
 			if(log.isDebugEnabled()) {
 				log.debug("Getting mime types for InputSteam [" + in + "].");
@@ -528,6 +530,14 @@ public class MimeUtil {
 			if(log.isDebugEnabled()) {
 				log.debug("Getting mime types for file name [" + fileName + "].");
 			}
+
+			// Test if this is a directory
+			File file = new File(fileName);
+			if(file.isDirectory()) {
+				mimeTypes.add(MimeUtil.DIRECTORY_MIME_TYPE);
+				return mimeTypes;
+			}
+
 			mimeTypes.addAll(mimeDetectorRegistry.getMimeTypes(fileName));
 
 			// We don't want the unknownMimeType added to the collection by MimeDetector(s)
@@ -569,6 +579,14 @@ public class MimeUtil {
 			if(log.isDebugEnabled()) {
 				log.debug("Getting mime types for URL [" + url + "].");
 			}
+
+			// Test if this is a directory
+			File file = new File(url.getPath());
+			if(file.isDirectory()) {
+				mimeTypes.add(MimeUtil.DIRECTORY_MIME_TYPE);
+				return mimeTypes;
+			}
+
 			// defer these calls to the file name and stream methods
 			mimeTypes.addAll(mimeDetectorRegistry.getMimeTypes(url));
 
@@ -771,42 +789,7 @@ public class MimeUtil {
 	 */
 	public static double getQuality(final String mimeType) throws MimeException
 	{
-		if(mimeType == null || mimeType.trim().length() == 0) {
-			return 0.0;
-		}
-
-		String [] parts = mimeSplitter.split(mimeType);
-
-		// Now check to see if a quality indicator was part of the passed in type
-		if (parts.length > 2) {
-			for (int i = 2; i < parts.length; i++) {
-				if (parts[i].trim().startsWith("q=")) {
-					// Get the number part
-					try {
-						// Get the quality factor
-						double d = Double.parseDouble(parts[i].split("=")[1].trim());
-						return d > 1.0 ? 1.0 : d;
-					} catch (NumberFormatException e) {
-						throw new MimeException(
-								"Invalid Mime quality indicator ["
-										+ parts[i].trim()
-										+ "]. Must be a valid double between 0 and 1");
-					} catch (Exception e) {
-						throw new MimeException(
-								"Error parsing Mime quality indicator.", e);
-					}
-				}
-			}
-		}
-		// No quality indicator so always assume its 1 unless a wild card is used
-		if (StringUtil.contains(parts[0], "*")) {
-			return 0.01;
-		} else if (StringUtil.contains(parts[1], "*")) {
-			return 0.02;
-		} else {
-			// Assume q value of 1
-			return 1.0;
-		}
+		return getMimeQuality(mimeType);
 	}
 
 	// Check each entry in each of the wanted lists against the entries in the
@@ -916,18 +899,11 @@ public class MimeUtil {
 	 * @param url
 	 * @return
 	 */
-	public static InputStream getInputStreamFromURL(URL url) {
+	public static InputStream getInputStreamForURL(URL url) throws Exception {
 		try {
 			return url.openStream();
 		}catch(ZipException e) {
-			try {
-				JarURLConnection conn = (JarURLConnection)url.openConnection();
-				return conn.getInputStream();
-			}catch(Exception ex) {
-				throw new MimeException(ex);
-			}
-		}catch(Exception e) {
-			throw new MimeException(e);
+			return ZipJarUtil.getInputStreamForURL(url);
 		}
 	}
 }
@@ -969,6 +945,7 @@ class MimeDetectorRegistry {
 		// Create the mime detector if we can
 		try {
 			MimeDetector md = (MimeDetector)Class.forName(mimeDetector).newInstance();
+			md.init();
 			if(log.isDebugEnabled()) {
 				log.debug("Registering MimeDetector with name [" + md.getName() + "] and description [" + md.getDescription() + "]");
 			}
@@ -989,7 +966,7 @@ class MimeDetectorRegistry {
 		Collection mimeTypes = new ArrayList();
 		try {
 			if(!EncodingGuesser.getSupportedEncodings().isEmpty()) {
-				mimeTypes = TextMimeDetector.getMimeTypesByteArray(data);
+				mimeTypes = TextMimeDetector.getMimeTypes(data);
 			}
 		}catch(UnsupportedOperationException ignore) {
 			// The TextMimeDetector will throw this if it decides
@@ -998,7 +975,7 @@ class MimeDetectorRegistry {
 		for(Iterator it  = mimeDetectors.values().iterator();it.hasNext();) {
 			try {
 				MimeDetector md = (MimeDetector)it.next();
-				mimeTypes.addAll(md.getMimeTypesByteArray(data));
+				mimeTypes.addAll(md.getMimeTypes(data));
 			}catch(UnsupportedOperationException ignore) {
 				// We ignore this as it indicates that this MimeDetector does not support
 				// Getting mime types from files
@@ -1016,7 +993,7 @@ class MimeDetectorRegistry {
 		Collection mimeTypes = new ArrayList();
 		try {
 			if(!EncodingGuesser.getSupportedEncodings().isEmpty()) {
-				mimeTypes = TextMimeDetector.getMimeTypesFileName(fileName);
+				mimeTypes = TextMimeDetector.getMimeTypes(fileName);
 			}
 		}catch(UnsupportedOperationException ignore) {
 			// The TextMimeDetector will throw this if it decides
@@ -1025,7 +1002,7 @@ class MimeDetectorRegistry {
 		for(Iterator it  = mimeDetectors.values().iterator();it.hasNext();) {
 			try {
 				MimeDetector md = (MimeDetector)it.next();
-				mimeTypes.addAll(md.getMimeTypesFileName(fileName));
+				mimeTypes.addAll(md.getMimeTypes(fileName));
 			}catch(UnsupportedOperationException usoe) {
 				// We ignore this as it indicates that this MimeDetector does not support
 				// Getting mime types from streams
@@ -1041,7 +1018,7 @@ class MimeDetectorRegistry {
 		Collection mimeTypes = new ArrayList();
 		try {
 			if(!EncodingGuesser.getSupportedEncodings().isEmpty()) {
-				mimeTypes = TextMimeDetector.getMimeTypesFile(file);
+				mimeTypes = TextMimeDetector.getMimeTypes(file);
 			}
 		}catch(UnsupportedOperationException ignore) {
 			// The TextMimeDetector will throw this if it decides
@@ -1050,7 +1027,7 @@ class MimeDetectorRegistry {
 		for(Iterator it  = mimeDetectors.values().iterator();it.hasNext();) {
 			try {
 				MimeDetector md = (MimeDetector)it.next();
-				mimeTypes.addAll(md.getMimeTypesFile(file));
+				mimeTypes.addAll(md.getMimeTypes(file));
 			}catch(UnsupportedOperationException usoe) {
 				// We ignore this as it indicates that this MimeDetector does not support
 				// Getting mime types from streams
@@ -1066,7 +1043,7 @@ class MimeDetectorRegistry {
 		Collection mimeTypes = new ArrayList();
 		try {
 			if(!EncodingGuesser.getSupportedEncodings().isEmpty()) {
-				mimeTypes = TextMimeDetector.getMimeTypesInputStream(in);
+				mimeTypes = TextMimeDetector.getMimeTypes(in);
 			}
 		}catch(UnsupportedOperationException ignore) {
 			// The TextMimeDetector will throw this if it decides
@@ -1075,7 +1052,7 @@ class MimeDetectorRegistry {
 		for(Iterator it  = mimeDetectors.values().iterator();it.hasNext();) {
 			try {
 				MimeDetector md = (MimeDetector)it.next();
-				mimeTypes.addAll(md.getMimeTypesInputStream(in));
+				mimeTypes.addAll(md.getMimeTypes(in));
 			}catch(UnsupportedOperationException usoe) {
 				// We ignore this as it indicates that this MimeDetector does not support
 				// Getting mime types from streams
@@ -1091,7 +1068,7 @@ class MimeDetectorRegistry {
 		Collection mimeTypes = new ArrayList();
 		try {
 			if(!EncodingGuesser.getSupportedEncodings().isEmpty()) {
-				mimeTypes = TextMimeDetector.getMimeTypesURL(url);
+				mimeTypes = TextMimeDetector.getMimeTypes(url);
 			}
 		}catch(UnsupportedOperationException ignore) {
 			// The TextMimeDetector will throw this if it decides
@@ -1100,7 +1077,7 @@ class MimeDetectorRegistry {
 		for(Iterator it  = mimeDetectors.values().iterator();it.hasNext();) {
 			try {
 				MimeDetector md = (MimeDetector)it.next();
-				mimeTypes.addAll(md.getMimeTypesURL(url));
+				mimeTypes.addAll(md.getMimeTypes(url));
 			}catch(UnsupportedOperationException usoe) {
 				// We ignore this as it indicates that this MimeDetector does not support
 				// Getting mime types from streams
@@ -1118,7 +1095,18 @@ class MimeDetectorRegistry {
 		if(log.isDebugEnabled()) {
 			log.debug("Unregistering MimeDetector [" + mimeDetector + "] from registry.");
 		}
-		return (MimeDetector)mimeDetectors.remove(mimeDetector);
+		try {
+			MimeDetector md = (MimeDetector)mimeDetectors.get(mimeDetector);
+			if(md != null) {
+				md.delete();
+				return (MimeDetector)mimeDetectors.remove(mimeDetector);
+			}
+		}catch(Exception e) {
+			log.error("Exception while un-registering MimeDetector [" + mimeDetector + "].", e);
+		}
+
+		// Shouldn't get here
+		return null;
 	}
 
 	/**

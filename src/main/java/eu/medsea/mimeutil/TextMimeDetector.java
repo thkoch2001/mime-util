@@ -148,7 +148,7 @@ public final class TextMimeDetector extends MimeDetector {
 
 		InputStream in = null;
 		try {
-			return getMimeTypesInputStream(in = new BufferedInputStream(MimeUtil.getInputStreamFromURL(url)));
+			return getMimeTypesInputStream(in = new BufferedInputStream(MimeUtil.getInputStreamForURL(url)));
 		}catch(UnsupportedOperationException e) {
 			throw e;
 		}catch(Exception e) {
@@ -169,7 +169,7 @@ public final class TextMimeDetector extends MimeDetector {
 	public Collection getMimeTypesFile(File file)
 			throws UnsupportedOperationException {
 
-		if(!file.exists() || file.isDirectory()) {
+		if(!file.exists()) {
 			throw new UnsupportedOperationException("This MimeDetector requires actual content.");
 		}
 		InputStream in = null;

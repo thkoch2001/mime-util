@@ -232,7 +232,7 @@ public class MagicMimeMimeDetector extends MimeDetector {
 	public Collection getMimeTypesURL(final URL url) throws UnsupportedOperationException {
 		InputStream in = null;
 		try {
-			return getMimeTypesInputStream(in = new BufferedInputStream(MimeUtil.getInputStreamFromURL(url)));
+			return getMimeTypesInputStream(in = new BufferedInputStream(MimeUtil.getInputStreamForURL(url)));
 		}catch(Exception e) {
 			throw new MimeException(e);
 		}finally {

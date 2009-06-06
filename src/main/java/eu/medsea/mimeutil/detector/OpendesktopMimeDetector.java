@@ -124,7 +124,6 @@ public class OpendesktopMimeDetector extends MimeDetector {
 	 */
 	public Collection getMimeTypesFileName(String fileName) {
 		Collection mimeTypes = new ArrayList();
-
 		// Lookup the globbing methods first
 		lookupMimeTypesForGlobFileName(fileName, mimeTypes);
 
@@ -142,21 +141,15 @@ public class OpendesktopMimeDetector extends MimeDetector {
 	 * See the Recommended checking order.
 	 */
 	public Collection getMimeTypesURL(URL url) {
-		Collection mimeTypes = new ArrayList();
 
-		// Lookup the globbing methods first
-		lookupMimeTypesForGlobFileName(url.getPath(), mimeTypes);
-
-		if(!mimeTypes.isEmpty()) {
-			mimeTypes = normalizeWeightedMimeList((List)mimeTypes);
-		}
+		Collection mimeTypes = getMimeTypesFileName(url.getPath());
 
 		// We only want to do this if it's a real file and either no globs matched
 		// or we have multiple matching globs
 		InputStream in = null;
 		if(mimeTypes.isEmpty() || mimeTypes.size() > 1) {
 			try {
-				Collection _mimeTypes = getMimeTypesInputStream(in = new BufferedInputStream(MimeUtil.getInputStreamFromURL(url)));
+				Collection _mimeTypes = getMimeTypesInputStream(in = new BufferedInputStream(MimeUtil.getInputStreamForURL(url)));
 
 				if(!_mimeTypes.isEmpty()) {
 					if(!mimeTypes.isEmpty()) {

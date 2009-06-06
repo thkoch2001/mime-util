@@ -33,6 +33,72 @@ public abstract class MimeDetector {
 		return getClass().getName();
 	}
 
+	/**
+	 * Called by MimeUtil.MimeDetectorRegistry.getMimeTypes(String fileName) {}
+	 * @param fileName
+	 * @return
+	 * @throws UnsupportedOperationException
+	 */
+	public final Collection getMimeTypes(final String fileName) throws UnsupportedOperationException {
+		return getMimeTypesFileName(fileName);
+	}
+
+	/**
+	 * Called by MimeUtil.MimeDetectorRegistry.getMimeTypes(File file) {}
+	 * @param fileName
+	 * @return
+	 * @throws UnsupportedOperationException
+	 */
+	public final Collection getMimeTypes(final File file) throws UnsupportedOperationException {
+		return getMimeTypesFile(file);
+	}
+
+	/**
+	 * Called by MimeUtil.MimeDetectorRegistry.getMimeTypes(URL url) {}
+	 * @param fileName
+	 * @return
+	 * @throws UnsupportedOperationException
+	 */
+	public final Collection getMimeTypes(final URL url) throws UnsupportedOperationException {
+		return getMimeTypesURL(url);
+	}
+
+	/**
+	 * Called by MimeUtil.MimeDetectorRegistry.getMimeTypes(byte [] data) {}
+	 * @param fileName
+	 * @return
+	 * @throws UnsupportedOperationException
+	 */
+	public final Collection getMimeTypes(final byte [] data) throws UnsupportedOperationException {
+		return getMimeTypesByteArray(data);
+	}
+
+	/**
+	 * Called by MimeUtil.MimeDetectorRegistry.getMimeTypes(InputStream in) {}
+	 * The InputStream must support the mark() and reset() methods.
+	 * @param fileName
+	 * @return
+	 * @throws UnsupportedOperationException
+	 */
+	public final Collection getMimeTypes(final InputStream in) throws UnsupportedOperationException {
+		// Enforces that the InputStream supports the mark() and reset() methods
+		if(!in.markSupported()) {
+			throw new UnsupportedOperationException("The InputStream must support the mark() and reset() methods.");
+		}
+		return getMimeTypesInputStream(in);
+	}
+
+	/**
+	 * You can override this method if you have any special one off initialisation to perform
+	 * such as allocating resources etc.
+	 */
+	public void init() {}
+
+	/**
+	 * You can override this method if for instance you allocated any resources in the init() method
+	 * that need to be closed or deallocated specially.
+	 */
+	public void delete() {}
 
 	/**
 	 * Abstract method to be implement by concrete MimeDetector(s).
@@ -50,7 +116,7 @@ public abstract class MimeDetector {
 	 * @return Collection of matched MimeType(s)
 	 * @throws UnsupportedOperationException
 	 */
-	public abstract Collection getMimeTypesFileName(final String fileName) throws UnsupportedOperationException;
+	protected abstract Collection getMimeTypesFileName(final String fileName) throws UnsupportedOperationException;
 
 	/**
 	 * Abstract method that must be implemented by concrete MimeDetector(s). This takes a file object and is
@@ -62,7 +128,7 @@ public abstract class MimeDetector {
 	 * @return Collection of matched MimeType(s)
 	 * @throws UnsupportedOperationException
 	 */
-	public abstract Collection getMimeTypesFile(final File file) throws UnsupportedOperationException;
+	protected abstract Collection getMimeTypesFile(final File file) throws UnsupportedOperationException;
 
 	/**
 	 * Abstract method that must be implemented by concrete MimeDetector(s). This takes a URL object and is
@@ -74,7 +140,7 @@ public abstract class MimeDetector {
 	 * @return Collection of matched MimeType(s)
 	 * @throws UnsupportedOperationException
 	 */
-	public abstract Collection getMimeTypesURL(final URL url) throws UnsupportedOperationException;
+	protected abstract Collection getMimeTypesURL(final URL url) throws UnsupportedOperationException;
 
 	/**
 	 * Abstract method that must be implemented by concrete MimeDetector(s). This takes an InputStream object and is
@@ -98,7 +164,7 @@ public abstract class MimeDetector {
 	 * @return Collection of matched MimeType(s)
 	 * @throws UnsupportedOperationException
 	 */
-	public abstract Collection getMimeTypesInputStream(final InputStream in) throws UnsupportedOperationException;
+	protected abstract Collection getMimeTypesInputStream(final InputStream in) throws UnsupportedOperationException;
 
 	/**
 	 * Abstract method that must be implemented by concrete MimeDetector(s). This takes a byte [] object and is
@@ -110,7 +176,7 @@ public abstract class MimeDetector {
 	 * @return Collection of matched MimeType(s)
 	 * @throws UnsupportedOperationException
 	 */
-	public abstract Collection getMimeTypesByteArray(final byte [] data) throws UnsupportedOperationException;
+	protected abstract Collection getMimeTypesByteArray(final byte [] data) throws UnsupportedOperationException;
 }
 
 

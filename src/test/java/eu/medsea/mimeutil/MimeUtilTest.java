@@ -167,17 +167,20 @@ public class MimeUtilTest extends TestCase {
 
 	public void testGetMimeTypesURL() {
 		try {
-
+			// In the root
 			assertTrue(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/MimeDetector.class")).contains("application/x-java-class"));
 			assertTrue(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/MimeDetector.java")).contains("text/x-java"));
-
 			assertTrue(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/a.html")).contains("text/html"));
 			assertTrue(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/c-gif.img")).contains("image/gif"));
 			assertTrue(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/e.svg")).contains("image/svg+xml"));
 			assertTrue(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/f.tar.gz")).contains("application/x-compressed-tar"));
-
 			assertTrue(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/e[xml]")).contains("application/xml"));
 
+			// In sub-directories
+			assertTrue(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/resources/eu/medsea/mimeutil/magic.mime")).contains("www/mime"));
+			assertTrue(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/resources/eu/medsea/mimeutil/mime-types.properties")).contains("text/plain"));
+
+			// This one will log an exception due to no entry defined
 			assertFalse(MimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/")).contains("application/xml"));
 		}catch(Exception e) {
 			fail("Should not get here " + e.getLocalizedMessage());
