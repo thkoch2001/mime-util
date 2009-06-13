@@ -236,11 +236,7 @@ public class MagicMimeMimeDetector extends MimeDetector {
 		}catch(Exception e) {
 			throw new MimeException(e);
 		}finally {
-			try {
-				in.close();
-			}catch(Exception ignore) {
-				log.error(ignore.getLocalizedMessage());
-			}
+			closeStream(in);
 		}
 	}
 
@@ -250,18 +246,13 @@ public class MagicMimeMimeDetector extends MimeDetector {
 	public Collection getMimeTypesFile(final File file) throws UnsupportedOperationException {
 		InputStream in = null;
 		try {
-			in = new BufferedInputStream(new FileInputStream(file));
-			return getMimeTypesInputStream(in);
+			return getMimeTypesInputStream(in = new BufferedInputStream(new FileInputStream(file)));
 		}catch(FileNotFoundException e) {
 			throw new UnsupportedOperationException(e);
 		}catch(Exception e) {
 			throw new MimeException(e);
 		}finally {
-			try {
-				in.close();
-			}catch(Exception ignore) {
-				log.error(ignore.getLocalizedMessage());
-			}
+			closeStream(in);
 		}
 	}
 
@@ -277,35 +268,25 @@ public class MagicMimeMimeDetector extends MimeDetector {
 	 * to Simon Pepping for his bug report
 	 */
 	private static void initMagicRules() {
-		InputStream is = null;
+		InputStream in = null;
 
 		// Try to locate a magic.mime file locate by system property magic-mime
 		try {
 			String fname = System.getProperty("magic-mime");
 			if (fname != null && fname.length() != 0) {
-				is = new FileInputStream(fname);
+				in = new FileInputStream(fname);
 				try {
-					if (is != null) {
+					if (in != null) {
 						parse("-Dmagic-mime=" + fname,
-								new InputStreamReader(is));
+								new InputStreamReader(in));
 					}
 				} finally {
-					if (is != null) {
-						try {
-							is.close();
-						} catch (Exception e) {
-							// ignore, but log in debug mode
-							if (log.isDebugEnabled())
-								log.debug(e.getMessage(), e);
-						}
-						is = null;
-					}
+					closeStream(in);
+					in = null;
 				}
 			}
 		} catch (Exception e) {
-			log
-					.error(
-							"Failed to parse custom magic mime file defined by system property -Dmagic-mime ["
+			log.error("Failed to parse custom magic mime file defined by system property -Dmagic-mime ["
 									+ System.getProperty("magic-mime")
 									+ "]. File will be ignored.", e);
 		}
@@ -320,8 +301,7 @@ public class MagicMimeMimeDetector extends MimeDetector {
 				try {
 					parse("classpath:[" + url + "]", new InputStreamReader(url.openStream()));
 				}catch(Exception ex) {
-					log.error(
-							"Failed to parse magic.mime rule file [" + url + "] on the classpath. File will be ignored.",
+					log.error("Failed to parse magic.mime rule file [" + url + "] on the classpath. File will be ignored.",
 							ex);
 
 				}
@@ -337,29 +317,18 @@ public class MagicMimeMimeDetector extends MimeDetector {
 			File f = new File(System.getProperty("user.home") + File.separator
 					+ ".magic.mime");
 			if (f.exists()) {
-				is = new FileInputStream(f);
+				in = new FileInputStream(f);
 				try {
-					if (is != null) {
-						parse(f.getAbsolutePath(), new InputStreamReader(is));
+					if (in != null) {
+						parse(f.getAbsolutePath(), new InputStreamReader(in));
 					}
 				} finally {
-					if (is != null) {
-						try {
-							is.close();
-						} catch (Exception e) {
-							// ignore, but log in debug mode
-							if (log.isDebugEnabled())
-								log.debug(e.getMessage(), e);
-						}
-						is = null;
-					}
+					closeStream(in);
+					in = null;
 				}
-
 			}
 		} catch (Exception e) {
-			log
-					.error(
-							"Failed to parse .magic.mime file from the users home directory. File will be ignored.",
+			log.error("Failed to parse .magic.mime file from the users home directory. File will be ignored.",
 							e);
 		}
 		// Now lets see if we have an environment variable named MAGIC set. This
@@ -379,30 +348,20 @@ public class MagicMimeMimeDetector extends MimeDetector {
 				}
 				File f = new File(name);
 				if (f.exists()) {
-					is = new FileInputStream(f);
+					in = new FileInputStream(f);
 					try {
-						if (is != null) {
+						if (in != null) {
 							parse(f.getAbsolutePath(),
-									new InputStreamReader(is));
+									new InputStreamReader(in));
 						}
 					} finally {
-						if (is != null) {
-							try {
-								is.close();
-							} catch (Exception e) {
-								// ignore, but log in debug mode
-								if (log.isDebugEnabled())
-									log.debug(e.getMessage(), e);
-							}
-							is = null;
-						}
+						closeStream(in);
+						in = null;
 					}
 				}
 			}
 		} catch (Exception e) {
-			log
-					.error(
-							"Failed to parse magic.mime file from directory located by environment variable MAGIC. File will be ignored.",
+			log.error("Failed to parse magic.mime file from directory located by environment variable MAGIC. File will be ignored.",
 							e);
 		}
 
@@ -422,21 +381,21 @@ public class MagicMimeMimeDetector extends MimeDetector {
 			// Use the magic.mime that we ship
 			try {
 				String resource = "eu/medsea/mimeutil/magic.mime";
-				is = MimeUtil.class.getClassLoader().getResourceAsStream(
+				in = MimeUtil.class.getClassLoader().getResourceAsStream(
 						resource);
-				parse("resource:" + resource, new InputStreamReader(is));
+				parse("resource:" + resource, new InputStreamReader(in));
 			} catch (Exception e) {
 				log.error("Failed to process internal magic.mime file.", e);
 			} finally {
-				if (is != null) {
+				if (in != null) {
 					try {
-						is.close();
+						in.close();
 					} catch (Exception e) {
 						// ignore, but log in debug mode
 						if (log.isDebugEnabled())
 							log.debug(e.getMessage(), e);
 					}
-					is = null;
+					in = null;
 				}
 			}
 		}

@@ -28,10 +28,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,6 +79,8 @@ public class OpendesktopMimeDetector extends MimeDetector {
 
 	private ByteBuffer content;
 
+	private Timer timer;
+
 	public OpendesktopMimeDetector(final String mimeCacheFile) {
 		init(mimeCacheFile);
 	}
@@ -97,6 +102,23 @@ public class OpendesktopMimeDetector extends MimeDetector {
 			raf = new RandomAccessFile(cacheFile,"r");
 			rCh = (raf).getChannel();
 			content = rCh.map(FileChannel.MapMode.READ_ONLY, 0, rCh.size());
+
+			// Read all of the MIME type from the Alias list
+			initMimeTypes();
+
+			if(log.isDebugEnabled()) {
+				log.debug("Registering a FileWatcher for [" + cacheFile + "]");
+			}
+			TimerTask task = new FileWatcher(new File(cacheFile)) {
+			      protected void onChange( File file ) {
+			          initMimeTypes();
+			        }
+			      };
+
+			timer = new Timer();
+			// repeat the check every 10 seconds
+			timer.schedule( task , new Date(), 10000 );
+
 		}catch(Exception e) {
 			throw new MimeException(e);
 		}finally {
@@ -108,6 +130,11 @@ public class OpendesktopMimeDetector extends MimeDetector {
 				}
 			}
 		}
+	}
+
+	public void delete() {
+		// Cancel this timer
+		timer.cancel();
 	}
 
 	public String getDescription() {
@@ -143,53 +170,7 @@ public class OpendesktopMimeDetector extends MimeDetector {
 	public Collection getMimeTypesURL(URL url) {
 
 		Collection mimeTypes = getMimeTypesFileName(url.getPath());
-
-		// We only want to do this if it's a real file and either no globs matched
-		// or we have multiple matching globs
-		InputStream in = null;
-		if(mimeTypes.isEmpty() || mimeTypes.size() > 1) {
-			try {
-				Collection _mimeTypes = getMimeTypesInputStream(in = new BufferedInputStream(MimeUtil.getInputStreamForURL(url)));
-
-				if(!_mimeTypes.isEmpty()) {
-					if(!mimeTypes.isEmpty()) {
-						// more than one glob matched
-
-						// Check for same mime type
-						for(Iterator it = mimeTypes.iterator(); it.hasNext();) {
-							String mimeType = (String)it.next();
-							if(_mimeTypes.contains(mimeType)) {
-								// mimeTypes = new ArrayList();
-								mimeTypes.add(mimeType);
-								// return mimeTypes;
-							}
-							// Check for mime type subtype
-							for(Iterator _it = _mimeTypes.iterator(); _it.hasNext();) {
-								String _mimeType = (String)_it.next();
-								if(isMimeTypeSubclass(mimeType, _mimeType)) {
-									// mimeTypes = new ArrayList();
-									mimeTypes.add(mimeType);
-									// return mimeTypes;
-								}
-							}
-						}
-					} else {
-						// No globs matched but we have magic matches
-						return _mimeTypes;
-					}
-				}
-			}catch(Exception e) {
-				throw new MimeException(e);
-			}finally {
-				try {
-					in.close();
-				}catch(Exception ignore) {
-					log.error(ignore.getLocalizedMessage());
-				}
-			}
-		}
-
-		return mimeTypes;
+		return _getMimeTypes(mimeTypes, getInputStream(url));
 	}
 
 	/**
@@ -202,47 +183,10 @@ public class OpendesktopMimeDetector extends MimeDetector {
 			throws UnsupportedOperationException {
 
 		Collection mimeTypes = getMimeTypesFileName(file.getName());
-
-		// We only want to do this if it's a real file and either no globs matched
-		// or we have multiple matching globs
-		if(file.exists() && !file.isDirectory()
-				&& (mimeTypes.isEmpty() || mimeTypes.size() > 1)) {
-			try {
-				Collection _mimeTypes = getMimeTypesInputStream(new BufferedInputStream(new FileInputStream(file)));
-
-				if(!_mimeTypes.isEmpty()) {
-					if(!mimeTypes.isEmpty()) {
-						// more than one glob matched
-
-						// Check for same mime type
-						for(Iterator it = mimeTypes.iterator(); it.hasNext();) {
-							String mimeType = (String)it.next();
-							if(_mimeTypes.contains(mimeType)) {
-								// mimeTypes = new ArrayList();
-								mimeTypes.add(mimeType);
-								// return mimeTypes;
-							}
-							// Check for mime type subtype
-							for(Iterator _it = _mimeTypes.iterator(); _it.hasNext();) {
-								String _mimeType = (String)_it.next();
-								if(isMimeTypeSubclass(mimeType, _mimeType)) {
-									// mimeTypes = new ArrayList();
-									mimeTypes.add(mimeType);
-									// return mimeTypes;
-								}
-							}
-						}
-					} else {
-						// No globs matched but we have magic matches
-						return _mimeTypes;
-					}
-				}
-			}catch(Exception e) {
-				throw new MimeException(e);
-			}
+		if(!file.exists()) {
+			return mimeTypes;
 		}
-
-		return mimeTypes;
+		return _getMimeTypes(mimeTypes, getInputStream(file));
 	}
 
 	/**
@@ -688,9 +632,7 @@ public class OpendesktopMimeDetector extends MimeDetector {
 	}
 
 	private String  getMimeType(int offset) {
-		String mimeType = getString(offset);
-		MimeUtil.addKnownMimeType(new MimeType(mimeType));
-		return mimeType;
+		return getString(offset);
 	}
 	private String getString(int offset) {
 		return getString(offset, false);
@@ -724,6 +666,99 @@ public class OpendesktopMimeDetector extends MimeDetector {
 		}
 		return buf.toString();
 	}
+
+	private InputStream getInputStream(File file) {
+		try {
+			return new FileInputStream(file);
+		}catch(Exception e) {
+			log.error("Error getting InputStream for file [" + file.getAbsolutePath() + "]", e);
+		}
+		return null;
+	}
+
+	private InputStream getInputStream(URL url) {
+		try {
+			return MimeUtil.getInputStreamForURL(url);
+		}catch(Exception e) {
+			throw new MimeException("Error getting InputStream for URL [" + url.getPath() + "]", e);
+		}
+	}
+
+	private Collection _getMimeTypes(Collection mimeTypes, InputStream in) {
+
+		if(mimeTypes.isEmpty() || mimeTypes.size() > 1) {
+			try {
+				Collection _mimeTypes = getMimeTypesInputStream(in = new BufferedInputStream(in));
+
+				if(!_mimeTypes.isEmpty()) {
+					if(!mimeTypes.isEmpty()) {
+						// more than one glob matched
+
+						// Check for same mime type
+						for(Iterator it = mimeTypes.iterator(); it.hasNext();) {
+							String mimeType = (String)it.next();
+							if(_mimeTypes.contains(mimeType)) {
+								// mimeTypes = new ArrayList();
+								mimeTypes.add(mimeType);
+								// return mimeTypes;
+							}
+							// Check for mime type subtype
+							for(Iterator _it = _mimeTypes.iterator(); _it.hasNext();) {
+								String _mimeType = (String)_it.next();
+								if(isMimeTypeSubclass(mimeType, _mimeType)) {
+									// mimeTypes = new ArrayList();
+									mimeTypes.add(mimeType);
+									// return mimeTypes;
+								}
+							}
+						}
+					} else {
+						// No globs matched but we have magic matches
+						return _mimeTypes;
+					}
+				}
+			}catch(Exception e) {
+				throw new MimeException(e);
+			}finally {
+				closeStream(in);
+			}
+		}
+		return mimeTypes;
+
+	}
+
+	// The Alias list should contain just about all the mime types used by
+	// this MimeDetector so we will be content with these entries
+	private void initMimeTypes() {
+
+		int listOffset = getAliasListOffset();
+		int numAliases = content.getInt(listOffset);
+
+		for(int i = 0; i < numAliases; i++) {
+			MimeUtil.addKnownMimeType(getString(content.getInt((listOffset + 4) + (i * 8)))); //
+			MimeUtil.addKnownMimeType(getString(content.getInt((listOffset + 8) + (i * 8))));
+		}
+	}
 }
 
+abstract class FileWatcher extends TimerTask {
+	  private long timeStamp;
+	  private File file;
+
+	  public FileWatcher( File file ) {
+	    this.file = file;
+	    this.timeStamp = file.lastModified();
+	  }
+
+	  public final void run() {
+	    long timeStamp = file.lastModified();
+	    // Only do this if the file timestamp has changed
+	    if( this.timeStamp != timeStamp ) {
+	      this.timeStamp = timeStamp;
+	      onChange(file);
+	    }
+	  }
+
+	  protected abstract void onChange( File file );
+	}
 

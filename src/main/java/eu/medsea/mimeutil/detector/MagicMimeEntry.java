@@ -425,7 +425,7 @@ class MagicMimeEntry {
 					} else {
 						len = getContent().length();
 					}
-					buf = ByteBuffer.allocate(len + 1); // TODO why len+1?
+					buf = ByteBuffer.allocate(len);
 					buf.put(content, startPos, len);
 					break;
 				}
@@ -485,7 +485,6 @@ class MagicMimeEntry {
 			} else {
 				len = getContent().length();
 			}
-			// buf = ByteBuffer.allocate(len + 1); // TODO why len+1?
 			buf = ByteBuffer.allocate(len);
 			raf.read(buf.array(), 0, len);
 			break;
@@ -672,39 +671,7 @@ class MagicMimeEntry {
 	}
 
 	private boolean matchByte(ByteBuffer bbuf) throws IOException {
-		short b = (short) ((bbuf.get(0) & 0xff) & (short)getMask(typeStr));
-
-		if (operation.equals(MagicMimeEntryOperation.EQUALS)) {
-			return b == contentNumber;
-		} else if (operation.equals(MagicMimeEntryOperation.NOT_EQUALS)) {
-			return b != contentNumber;
-		} else if (operation.equals(MagicMimeEntryOperation.GREATER_THAN)) {
-			return b > contentNumber;
-		} else if (operation.equals(MagicMimeEntryOperation.LESS_THAN)) {
-			return b < contentNumber;
-		} else if (operation.equals(MagicMimeEntryOperation.AND)) {
-			boolean result = (b & contentNumber) == contentNumber;
-			return result;
-		} else if (operation.equals(MagicMimeEntryOperation.ANY)) {
-			return true;
-		} else if (operation.equals(MagicMimeEntryOperation.CLEAR)) {
-			long maskedB = b & contentNumber;
-			boolean result = (maskedB ^ contentNumber) == 0;
-			return result;
-		} else if (operation.equals(MagicMimeEntryOperation.NEGATED)) {
-			int negatedB = ~b;
-			return negatedB == contentNumber;
-		} else
-			return false;
-	}
-
-	private boolean matchShort(ByteBuffer bbuf, ByteOrder bo)
-			throws IOException {
-		bbuf.order(bo);
-
-		int found = (bbuf.getShort() & 0xffff);
-		long mask = (int)getMask(typeStr);
-		found = (int)(found & mask);
+		short found = (short) ((bbuf.get(0) & 0xff) & (short)getMask(typeStr));
 
 		if (operation.equals(MagicMimeEntryOperation.EQUALS)) {
 			return found == contentNumber;
@@ -730,10 +697,41 @@ class MagicMimeEntry {
 			return false;
 	}
 
-	private boolean matchLong(ByteBuffer bbuf, ByteOrder bo) throws IOException {
+	private boolean matchShort(ByteBuffer bbuf, ByteOrder bo)
+			throws IOException {
 		bbuf.order(bo);
 
-		long found = (bbuf.getInt() & 0xffffffffL) & getMask(typeStr);
+		int found = (int)((bbuf.getShort() & 0xffff) & (int)getMask(typeStr));
+
+		if (operation.equals(MagicMimeEntryOperation.EQUALS)) {
+			return found == contentNumber;
+		} else if (operation.equals(MagicMimeEntryOperation.NOT_EQUALS)) {
+			return found != contentNumber;
+		} else if (operation.equals(MagicMimeEntryOperation.GREATER_THAN)) {
+			return found > contentNumber;
+		} else if (operation.equals(MagicMimeEntryOperation.LESS_THAN)) {
+			return found < contentNumber;
+		} else if (operation.equals(MagicMimeEntryOperation.AND)) {
+			boolean result = (found & contentNumber) == contentNumber;
+			return result;
+		} else if (operation.equals(MagicMimeEntryOperation.ANY)) {
+			return true;
+		} else if (operation.equals(MagicMimeEntryOperation.CLEAR)) {
+			long maskedFound = found & contentNumber;
+			boolean result = (maskedFound ^ contentNumber) == 0;
+			return result;
+		} else if (operation.equals(MagicMimeEntryOperation.NEGATED)) {
+			int negatedFound = ~found;
+			return negatedFound == contentNumber;
+		} else
+			return false;
+	}
+
+	private boolean matchLong(ByteBuffer bbuf, ByteOrder bo)
+			throws IOException {
+		bbuf.order(bo);
+
+		long found = (long)((bbuf.getInt() & 0xffffffffL) & getMask(typeStr));
 
 		if (operation.equals(MagicMimeEntryOperation.EQUALS)) {
 			return found == contentNumber;

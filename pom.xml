@@ -201,7 +201,6 @@
 			<organization>NightLabs GMBH</organization>
 			<organizationUrl>http://www.nightlabs.de/nightlabs/html/</organizationUrl>
 			<roles>
-				<role>Administrator</role>
 				<role>Developer</role>
 			</roles>
 		</developer>
@@ -227,22 +226,24 @@
 		<url>http://mime-util.svn.sourceforge.net/viewvc/mime-util/</url>
 	</scm>
 
-  <distributionManagement>
-      <repository>
-         <id>sourceforge</id>
-         <name>mime-util SourceForge Maven Repository</name>
-         <url>scp://smcardle@shell.sourceforge.net/home/groups/m/mi/mime-util/htdocs/maven2/repo</url>
-      </repository>
-      <snapshotRepository>
-         <id>sourceforge-snapshot</id>
-         <name>mime-util SourceForge Maven SNAPSHOT Repository</name>
-         <url>scp://smcardle@shell.sourceforge.net/home/groups/m/mi/mime-util/htdocs/maven2/repo-snapshot</url>
-      </snapshotRepository>
-     <site>
-      <id>mime-util.sf.net</id>
-      <url>scp://smcardle@shell.sourceforge.net/home/groups/m/mi/mime-util/htdocs</url>
-      <!--  To login to a shell use : ssh -t USER,PROJECT@shell.sourceforge.net -->
-    </site>
-  </distributionManagement>
+	<distributionManagement>
+		<repository>
+			<id>sourceforge</id>
+			<name>mime-util SourceForge Maven Repository</name>
+			<url>scp://smcardle@shell.sourceforge.net/home/groups/m/mi/mime-util/htdocs/maven2/repo</url>
+		</repository>
+		<snapshotRepository>
+			<id>sourceforge</id>
+			<name>mime-util SourceForge Maven SNAPSHOT Repository</name>
+			<url>scp://smcardle@shell.sourceforge.net/home/groups/m/mi/mime-util/htdocs/maven2/repo-snapshot</url>
+		</snapshotRepository>
+		<site>
+			<id>sourceforge</id>
+			<url>scp://smcardle@shell.sourceforge.net/home/groups/m/mi/mime-util/htdocs</url>
+			<!--
+				To create and login to a shell use : ssh -t USER,PROJECT@shell.sourceforge.net create
+			-->
+		</site>
+	</distributionManagement>
 
 </project>

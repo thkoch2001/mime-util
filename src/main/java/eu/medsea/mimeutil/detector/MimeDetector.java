@@ -177,6 +177,16 @@ public abstract class MimeDetector {
 	 * @throws UnsupportedOperationException
 	 */
 	protected abstract Collection getMimeTypesByteArray(final byte [] data) throws UnsupportedOperationException;
+
+	protected static void closeStream(InputStream in) {
+		if(in == null) {
+			return;
+		}
+		try {
+			in.close();
+		}catch(Exception ignore) {
+		}
+	}
 }
 
 
