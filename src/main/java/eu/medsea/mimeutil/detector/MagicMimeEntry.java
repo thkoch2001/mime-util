@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Vector;
 
 import eu.medsea.mimeutil.MimeType;
+import eu.medsea.util.StringUtil;
 
 /**
  * A single MagicMime entry from a magic.mime file. This entry can contain
@@ -447,7 +448,7 @@ class MagicMimeEntry {
 
 				case MagicMimeEntry.BYTE_TYPE: {
 					buf = ByteBuffer.allocate(1);
-					buf.put(buf.array(), startPos, 1);
+					buf.put(content, startPos, 1);
 					break;
 				}
 
@@ -576,6 +577,8 @@ class MagicMimeEntry {
 	 */
 	private boolean match(ByteBuffer buf) throws IOException {
 		boolean matches = true;
+		ByteOrder byteOrder = ByteOrder.BIG_ENDIAN;
+
 		switch (getType()) {
 		case MagicMimeEntry.STRING_TYPE: {
 			matches = matchString(buf);
@@ -583,14 +586,12 @@ class MagicMimeEntry {
 		}
 
 		case MagicMimeEntry.SHORT_TYPE: {
-			matches = matchShort(buf, ByteOrder.BIG_ENDIAN); // , false, (short)
-																// 0xFF);
+			matches = matchShort(buf, byteOrder);
 			break;
 		}
 
 		case MagicMimeEntry.LESHORT_TYPE:
 		case MagicMimeEntry.BESHORT_TYPE: {
-			ByteOrder byteOrder = ByteOrder.BIG_ENDIAN;
 			if (getType() == MagicMimeEntry.LESHORT_TYPE) {
 				byteOrder = ByteOrder.LITTLE_ENDIAN;
 			}
@@ -600,7 +601,6 @@ class MagicMimeEntry {
 
 		case MagicMimeEntry.LELONG_TYPE:
 		case MagicMimeEntry.BELONG_TYPE: {
-			ByteOrder byteOrder = ByteOrder.BIG_ENDIAN;
 			if (getType() == MagicMimeEntry.LELONG_TYPE) {
 				byteOrder = ByteOrder.LITTLE_ENDIAN;
 			}
@@ -624,7 +624,7 @@ class MagicMimeEntry {
 	private boolean matchString(ByteBuffer bbuf) throws IOException {
 		if (isBetween) {
 			String buffer = new String(bbuf.array());
-			if (buffer.contains(getContent())) {
+			if (StringUtil.contains(buffer, getContent())) {
 				return true;
 			}
 			return false;
