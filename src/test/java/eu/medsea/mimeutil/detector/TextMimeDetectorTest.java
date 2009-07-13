@@ -6,10 +6,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 // import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 
 import eu.medsea.mimeutil.MimeType;
+import eu.medsea.mimeutil.MimeUtil;
 import eu.medsea.mimeutil.MimeUtil2;
 import eu.medsea.mimeutil.TextMimeDetector;
 import eu.medsea.mimeutil.TextMimeType;
@@ -256,4 +258,17 @@ public class TextMimeDetectorTest extends TestCase {
 			return false;
 		}
 	}
+
+	public void testUnicodeAndWestern() {
+		String[] encodings = {"UTF-8", "ISO-8859-1", "ISO-8859-15", "ASCII"};
+
+		Collection c_encodings = new ArrayList();
+		c_encodings.addAll(Arrays.asList(encodings));
+		EncodingGuesser.setSupportedEncodings(c_encodings);
+		TextMimeDetector.setPreferredEncodings(encodings);
+
+		assertEquals(MimeUtil.getMimeTypes(new File("src/test/resources/textfiles/western")), "text/plain;charset=ISO-8859-1");
+		assertEquals(MimeUtil.getMimeTypes(new File("src/test/resources/textfiles/unicode")), "text/plain;charset=UTF-8");
+	}
+
 }

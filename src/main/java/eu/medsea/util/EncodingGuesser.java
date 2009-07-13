@@ -161,7 +161,12 @@ public class EncodingGuesser {
 				}
 
 				// This is the byte array we will compare with the passed in source array copy
-				byte [] compare = test.getBytes();
+				byte [] compare = null;
+				try {
+					compare = test.getBytes(encoding);
+				}catch(UnsupportedOperationException ignore) {
+					continue;
+				}
 
 				// Check if source and destination byte arrays are equal
 				if(!compareByteArrays(data, lengthBOM, compare, 0, compare.length)) {

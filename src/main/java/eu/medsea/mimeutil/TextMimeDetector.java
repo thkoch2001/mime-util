@@ -103,8 +103,8 @@ public final class TextMimeDetector extends MimeDetector {
 	// The maximum amount of data to retrieve from a stream
 	private static final int BUFFER_SIZE = 1024;
 
-	// No text file can have 4 or more consecutive negative values
-	private static final int MAX_NEGATIVE_VALUES = 4;
+	// No text file should have 2 or more consecutive NULL values
+	private static final int MAX_NULL_VALUES = 2;
 
 	private static Collection preferredEncodings = new ArrayList();
 	static {
@@ -247,10 +247,6 @@ public final class TextMimeDetector extends MimeDetector {
 			throw new UnsupportedOperationException();
 		}
 
-		// It's possible that some binary files made it through the previous test, especially small ones.
-		// The remaining tests are designed to find true text files in any encoding scheme
-		// and eliminate all remaining binary files.
-
 		Collection mimeTypes = new ArrayList();
 
 		Collection possibleEncodings = EncodingGuesser.getPossibleEncodings(data);
@@ -370,22 +366,25 @@ public final class TextMimeDetector extends MimeDetector {
 	/*
 	 * This is a quick check for the byte array to see if it contains binary data.
 	 *
-	 * As no known text encoding can have a character containing more than MAX_NEGATIVE_VALUES consecutive negative bytes
+	 * As no known text encoding can have a character containing more than MAX_NULL_VALUES consecutive negative bytes
 	 * method does a quick and dirty elimination of what are probably binary files but should never eliminate possible text files.
 	 *
-	 * It is possible that some binary files will not have MAX_NEGATIVE_VALUES consecutive negative byte
+	 * It is possible that some binary files will not have MAX_NEGATIVE_VALUES consecutive byte
 	 * values especially if it's a small file and will slip through here. Later tests should eliminate these.
+	 *
+	 * We will modify this method to include other known sequences as and when we discover them
 	 */
 	private boolean isBinary(byte [] data) {
+
 		int negCount = 0;
 
 		for(int i = 0; i < data.length; i++) {
-			if(data[i] < 0) {
+			if(data[i] == 0) {
 				negCount++;
 			} else {
 				negCount = 0;
 			}
-			if(negCount == MAX_NEGATIVE_VALUES) {
+			if(negCount == MAX_NULL_VALUES) {
 				return true;
 			}
 		}

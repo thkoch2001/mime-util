@@ -14,7 +14,7 @@
 		<bundle.namespace>eu.medsea</bundle.namespace>
 	</properties>
 
-	<version>2.1.1</version>
+	<version>2.1.2</version>
 	<description>mime-util is a simple to use, small, light weight and fast open source java utility library that can detect
 		MIME types from files, input streams, URL's and byte arrays.
 		Due to the use of regular expressions and the java.nio packages it requires at least Java 1.4.
