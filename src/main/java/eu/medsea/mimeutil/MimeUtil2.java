@@ -190,6 +190,24 @@ public class MimeUtil2 {
 			// so ignore them
 		}
 	}
+	
+	/**
+	 * Returns a copy of the Collection of currently known MIME types as strings that have been 
+	 * registered either by the initialisation methods of the MimeDetector(s) or by the user.
+	 */
+	public static Collection getKnownMimeTypes() {
+		Collection mimeTypes = new ArrayList();
+		Iterator i = MimeUtil2.mimeTypes.keySet().iterator();
+		while(i.hasNext()) {
+			// Iterate through each set and compose the MIME types
+			String mediaType = (String)i.next();
+			Iterator it = ((Set)MimeUtil2.mimeTypes.get(mediaType)).iterator();
+			while(it.hasNext()) {
+				mimeTypes.add(mediaType + "/" + (String)it.next());
+			}
+		}
+		return mimeTypes;
+	}
 
 	/**
 	 * Register a MimeDetector and add it to the MimeDetector registry.

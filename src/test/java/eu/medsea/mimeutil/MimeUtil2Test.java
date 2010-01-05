@@ -51,6 +51,10 @@ public class MimeUtil2Test extends TestCase {
 			fail("Should not get here. Possibly no internet connection. " + e.getLocalizedMessage());
 		}
 	}
+	
+	public void testGetKnownMimeTypes() {
+		assertTrue(MimeUtil2.getKnownMimeTypes().contains("application/octet-stream"));
+	}
 
 	public void testMimeTypesEquals() {
 		MimeType mt1 = new MimeType("application/xml");
