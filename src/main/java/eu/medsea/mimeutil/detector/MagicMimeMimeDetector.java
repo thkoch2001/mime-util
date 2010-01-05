@@ -248,7 +248,7 @@ public class MagicMimeMimeDetector extends MimeDetector {
 		try {
 			return getMimeTypesInputStream(in = new BufferedInputStream(new FileInputStream(file)));
 		}catch(FileNotFoundException e) {
-			throw new UnsupportedOperationException(e);
+			throw new UnsupportedOperationException(e.getLocalizedMessage());
 		}catch(Exception e) {
 			throw new MimeException(e);
 		}finally {
@@ -275,20 +275,16 @@ public class MagicMimeMimeDetector extends MimeDetector {
 			String fname = System.getProperty("magic-mime");
 			if (fname != null && fname.length() != 0) {
 				in = new FileInputStream(fname);
-				try {
-					if (in != null) {
-						parse("-Dmagic-mime=" + fname,
-								new InputStreamReader(in));
-					}
-				} finally {
-					closeStream(in);
-					in = null;
+				if (in != null) {
+					parse("-Dmagic-mime=" + fname, new InputStreamReader(in));
 				}
 			}
 		} catch (Exception e) {
 			log.error("Failed to parse custom magic mime file defined by system property -Dmagic-mime ["
-									+ System.getProperty("magic-mime")
-									+ "]. File will be ignored.", e);
+					+ System.getProperty("magic-mime")
+					+ "]. File will be ignored.", e);
+		} finally {
+			in = closeStream(in);
 		}
 
 		// Try to locate a magic.mime file(s) on the classpath
@@ -298,17 +294,21 @@ public class MagicMimeMimeDetector extends MimeDetector {
 			Enumeration en = MimeUtil.class.getClassLoader().getResources("magic.mime");
 			while(en.hasMoreElements()) {
 				URL url = (URL)en.nextElement();
-				try {
-					parse("classpath:[" + url + "]", new InputStreamReader(url.openStream()));
-				}catch(Exception ex) {
-					log.error("Failed to parse magic.mime rule file [" + url + "] on the classpath. File will be ignored.",
+				in = url.openStream();
+				if(in != null) {
+					try {
+						parse("classpath:[" + url + "]", new InputStreamReader(in));
+					} catch(Exception ex) {
+						log.error("Failed to parse magic.mime rule file [" + url + "] on the classpath. File will be ignored.",
 							ex);
-
+					}
 				}
 
 			}
 		}catch(Exception e) {
 			log.error("Problem while processing magic.mime files from classpath. Files will be ignored.", e);
+		} finally {
+			in = closeStream(in);
 		}
 
 		// Now lets see if we have one in the users home directory. This is
@@ -318,19 +318,20 @@ public class MagicMimeMimeDetector extends MimeDetector {
 					+ ".magic.mime");
 			if (f.exists()) {
 				in = new FileInputStream(f);
-				try {
-					if (in != null) {
+				if (in != null) {
+					try {
 						parse(f.getAbsolutePath(), new InputStreamReader(in));
+					} catch(Exception ex) {
+						log.error("Failed to parse .magic.mime file from the users home directory. File will be ignored.", ex);
 					}
-				} finally {
-					closeStream(in);
-					in = null;
 				}
 			}
-		} catch (Exception e) {
-			log.error("Failed to parse .magic.mime file from the users home directory. File will be ignored.",
-							e);
+		}catch(Exception e) {
+			log.error("Problem while processing .magic.mime file from the users home directory. File will be ignored.", e);
+		} finally {
+			in = closeStream(in);
 		}
+
 		// Now lets see if we have an environment variable named MAGIC set. This
 		// would normally point to a magic or magic.mgc file.
 		// As we don't use these file types we will look to see if there is also
@@ -349,20 +350,20 @@ public class MagicMimeMimeDetector extends MimeDetector {
 				File f = new File(name);
 				if (f.exists()) {
 					in = new FileInputStream(f);
-					try {
-						if (in != null) {
+					if (in != null) {
+						try {
 							parse(f.getAbsolutePath(),
 									new InputStreamReader(in));
+						}catch(Exception ex) {
+							log.error("Failed to parse magic.mime file from directory located by environment variable MAGIC. File will be ignored.", ex);
 						}
-					} finally {
-						closeStream(in);
-						in = null;
 					}
 				}
 			}
 		} catch (Exception e) {
-			log.error("Failed to parse magic.mime file from directory located by environment variable MAGIC. File will be ignored.",
-							e);
+			log.error("Problem while processing magic.mime file from directory located by environment variable MAGIC. File will be ignored.", e);
+		} finally {
+			in = closeStream(in);
 		}
 
 		// Parse the UNIX magic(5) magic.mime files. Since there can be
@@ -383,20 +384,17 @@ public class MagicMimeMimeDetector extends MimeDetector {
 				String resource = "eu/medsea/mimeutil/magic.mime";
 				in = MimeUtil.class.getClassLoader().getResourceAsStream(
 						resource);
-				parse("resource:" + resource, new InputStreamReader(in));
-			} catch (Exception e) {
-				log.error("Failed to process internal magic.mime file.", e);
-			} finally {
-				if (in != null) {
+				if(in != null) {
 					try {
-						in.close();
-					} catch (Exception e) {
-						// ignore, but log in debug mode
-						if (log.isDebugEnabled())
-							log.debug(e.getMessage(), e);
+						parse("resource:" + resource, new InputStreamReader(in));
+					}catch(Exception ex) {
+						log.error("Failed to parse internal magic.mime file.", ex);
 					}
-					in = null;
 				}
+			} catch (Exception e) {
+				log.error("Problem while processing internal magic.mime file.", e);
+			} finally {
+				in = closeStream(in);
 			}
 		}
 	}
@@ -410,21 +408,17 @@ public class MagicMimeMimeDetector extends MimeDetector {
 			File f = (File) itFile.next();
 			try {
 				if (f.exists()) {
-					parse(f.getAbsolutePath(), new InputStreamReader(is = new FileInputStream(f)));
+					is = new FileInputStream(f);
+					try {
+						parse(f.getAbsolutePath(), new InputStreamReader(is));
+					}catch(Exception e) {
+						log.error("Failed to parse " + f.getName() + ". File will be ignored.");
+					}
 				}
 			} catch (Exception e) {
-				log.warn(e.getMessage());
+				log.error(e.getMessage(), e);
 			} finally {
-				if (is != null) {
-					try {
-						is.close();
-					} catch (Exception e) {
-						// ignore, but log in debug mode
-						if (log.isDebugEnabled())
-							log.debug(e.getMessage(), e);
-					}
-					is = null;
-				}
+				is = closeStream(is);
 			}
 		}
 	}

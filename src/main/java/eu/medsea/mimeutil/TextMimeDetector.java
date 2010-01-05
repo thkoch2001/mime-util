@@ -104,7 +104,7 @@ public final class TextMimeDetector extends MimeDetector {
 	private static final int BUFFER_SIZE = 1024;
 
 	// No text file should have 2 or more consecutive NULL values
-	private static final int MAX_NULL_VALUES = 2;
+	private static final int MAX_NULL_VALUES = 1;
 
 	private static Collection preferredEncodings = new ArrayList();
 	static {
@@ -366,10 +366,10 @@ public final class TextMimeDetector extends MimeDetector {
 	/*
 	 * This is a quick check for the byte array to see if it contains binary data.
 	 *
-	 * As no known text encoding can have a character containing more than MAX_NULL_VALUES consecutive negative bytes
+	 * As no known text encoding can have more than MAX_NULL_VALUES consecutive null values the
 	 * method does a quick and dirty elimination of what are probably binary files but should never eliminate possible text files.
 	 *
-	 * It is possible that some binary files will not have MAX_NEGATIVE_VALUES consecutive byte
+	 * It is possible that some binary files will not have MAX_NULL_VALUES consecutive byte
 	 * values especially if it's a small file and will slip through here. Later tests should eliminate these.
 	 *
 	 * We will modify this method to include other known sequences as and when we discover them

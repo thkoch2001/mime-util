@@ -17,6 +17,7 @@ import eu.medsea.mimeutil.TextMimeDetector;
 import eu.medsea.mimeutil.TextMimeType;
 import eu.medsea.mimeutil.handler.TextMimeHandler;
 import eu.medsea.util.EncodingGuesser;
+import eu.medsea.util.StringUtil;
 
 import junit.framework.TestCase;
 
@@ -44,8 +45,11 @@ public class TextMimeDetectorTest extends TestCase {
 		EncodingGuesser.setSupportedEncodings(new ArrayList());
 	}
 
-	// We don't register any MimeDetector(s) so the default TextMimeDetector will be used
+	public void testBoundaryCases( ){
+		assertEquals(mimeUtil.getMimeTypes(new File("src/test/resources/porrasturvat-1.0.3.tar.gz")), "application/octet-stream");
+	}
 
+	// We don't register any MimeDetector(s) so the default TextMimeDetector will be used
 	public void testGetMimeTypesFile() {
 
 		assertTrue(mimeUtil.getMimeTypes(new File("src/test/resources/a.html")).contains("text/plain"));
@@ -241,7 +245,7 @@ public class TextMimeDetectorTest extends TestCase {
 	class SVGHandler implements TextMimeHandler {
 		public boolean handle(TextMimeType mimeType, String content) {
 			if(mimeType.equals(new MimeType("text/xml"))) {
-				if(content.contains("<svg  ")) {
+				if(StringUtil.contains(content, "<svg  ")) {
 					mimeType.setMimeType(new MimeType("image/svg+xml"));
 					return true;
 				}

@@ -105,7 +105,7 @@ public class MimeUtil2 {
 	 */
 	public static final MimeType DIRECTORY_MIME_TYPE = new MimeType("application/directory");
 	/**
-	 * Mime type used to identify a directory
+	 * Mime type used to identify an unknown MIME type
 	 */
 	public static final MimeType UNKNOWN_MIME_TYPE = new MimeType("application/octet-stream");
 
@@ -421,14 +421,13 @@ public class MimeUtil2 {
 
 			if(file.isDirectory()) {
 				mimeTypes.add(MimeUtil2.DIRECTORY_MIME_TYPE);
-				return mimeTypes;
+			} else {
+				// Defer this call to the file name and stream methods
+				mimeTypes.addAll(mimeDetectorRegistry.getMimeTypes(file));
+
+				// We don't want the unknownMimeType added to the collection by MimeDetector(s)
+				mimeTypes.remove(unknownMimeType);
 			}
-
-			// Defer this call to the file name and stream methods
-			mimeTypes.addAll(mimeDetectorRegistry.getMimeTypes(file));
-
-			// We don't want the unknownMimeType added to the collection by MimeDetector(s)
-			mimeTypes.remove(unknownMimeType);
 		}
 		// If the collection is empty we want to add the unknownMimetype
 		if(mimeTypes.isEmpty()) {
@@ -535,15 +534,15 @@ public class MimeUtil2 {
 
 			// Test if this is a directory
 			File file = new File(fileName);
+
 			if(file.isDirectory()) {
 				mimeTypes.add(MimeUtil2.DIRECTORY_MIME_TYPE);
-				return mimeTypes;
+			} else {
+				mimeTypes.addAll(mimeDetectorRegistry.getMimeTypes(fileName));
+
+				// We don't want the unknownMimeType added to the collection by MimeDetector(s)
+				mimeTypes.remove(unknownMimeType);
 			}
-
-			mimeTypes.addAll(mimeDetectorRegistry.getMimeTypes(fileName));
-
-			// We don't want the unknownMimeType added to the collection by MimeDetector(s)
-			mimeTypes.remove(unknownMimeType);
 		}
 		// If the collection is empty we want to add the unknownMimetype
 		if(mimeTypes.isEmpty()) {
@@ -586,14 +585,13 @@ public class MimeUtil2 {
 			File file = new File(url.getPath());
 			if(file.isDirectory()) {
 				mimeTypes.add(MimeUtil2.DIRECTORY_MIME_TYPE);
-				return mimeTypes;
+			} else {
+				// defer these calls to the file name and stream methods
+				mimeTypes.addAll(mimeDetectorRegistry.getMimeTypes(url));
+
+				// We don't want the unknownMimeType added to the collection by MimeDetector(s)
+				mimeTypes.remove(unknownMimeType);
 			}
-
-			// defer these calls to the file name and stream methods
-			mimeTypes.addAll(mimeDetectorRegistry.getMimeTypes(url));
-
-			// We don't want the unknownMimeType added to the collection by MimeDetector(s)
-			mimeTypes.remove(unknownMimeType);
 		}
 		// If the collection is empty we want to add the unknownMimetype
 		if(mimeTypes.isEmpty()) {
@@ -693,6 +691,7 @@ public class MimeUtil2 {
 			MimeType mt = (MimeType)it.next();
 			if(mt.getSpecificity() > specificity) {
 				mimeType = mt;
+				specificity = mimeType.getSpecificity();
 			}
 		}
 		return mimeType;

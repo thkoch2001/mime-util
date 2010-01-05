@@ -36,6 +36,22 @@ public class MimeUtil2Test extends TestCase {
 		mimeUtil.unregisterMimeDetector("eu.medsea.mimeutil.detector.OpendesktopMimeDetector");
 	}
 
+
+	/*
+	 * Will only work with web access
+	 */
+	public void testMimeTypesFromWebsite() {
+		// Only want to test for the MagicMimeMimeDetector
+		mimeUtil.unregisterMimeDetector("eu.medsea.mimeutil.detector.ExtensionMimeDetector");
+		mimeUtil.unregisterMimeDetector("eu.medsea.mimeutil.detector.OpendesktopMimeDetector");
+
+		try {
+			assertTrue(mimeUtil.getMimeTypes(new URL("http://www.gutenberg.org/feeds/catalog.rdf.zip")).contains("application/zip"));
+		}catch(Exception e) {
+			fail("Should not get here. Possibly no internet connection. " + e.getLocalizedMessage());
+		}
+	}
+
 	public void testMimeTypesEquals() {
 		MimeType mt1 = new MimeType("application/xml");
 		MimeType mt2 = new MimeType("application/xml");
@@ -169,6 +185,13 @@ public class MimeUtil2Test extends TestCase {
 
 	public void testGetMimeTypesURL() {
 		try {
+			// Test for directories containing spaces in the name (Only do if running on windows)
+			if(System.getProperty("os.name").startsWith("Windows")) {
+				assertTrue(mimeUtil.getMimeTypes(new URL("file:///c:/Program Files")).equals(MimeUtil2.DIRECTORY_MIME_TYPE));
+			}
+
+			// Test for detection of files in a zip file
+
 			// In the root
 			assertTrue(mimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/MimeDetector.class")).contains("application/x-java-class"));
 			assertTrue(mimeUtil.getMimeTypes(new URL("jar:file:src/test/resources/a.zip!/MimeDetector.java")).contains("text/x-java"));

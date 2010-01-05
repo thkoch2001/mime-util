@@ -60,7 +60,7 @@ public class WindowsRegistryMimeDetector extends MimeDetector {
 	private static final boolean isWindows = System.getProperty("os.name").startsWith("Windows");
 
 	public String getDescription() {
-		return "Get the MIME types of file extensions from the Windows Registry. Will be disabled on non-Windows machines.";
+		return "Get the MIME types of file extensions from the Windows Registry. Will be inafective on non-Windows machines.";
 	}
 
 	public Collection getMimeTypesFile(File file)
@@ -79,10 +79,10 @@ public class WindowsRegistryMimeDetector extends MimeDetector {
 
 	public Collection getMimeTypesURL(URL url)
 			throws UnsupportedOperationException {
-		if(!isWindows) {
-			throw new UnsupportedOperationException("WindowsRegistryMimeDetector only supported on Windows platform.");
-		}
 		Collection mimeTypes = new ArrayList();
+		if(!isWindows) {
+			return mimeTypes;
+		}
 
 		String contentType = getContentType(MimeUtil.getExtension(url.getPath()));
 		if(contentType != null && contentType.length() > 0) {
@@ -158,24 +158,4 @@ public class WindowsRegistryMimeDetector extends MimeDetector {
 			return sw.toString();
 		}
 	}
-
-	public static void main(String [] args) throws Exception {
-		WindowsRegistryMimeDetector wrmd = new WindowsRegistryMimeDetector();
-
-		// As a file name
-		System.out.println("a.323 = " + wrmd.getMimeTypesFileName("a.323"));
-		// As a File object
-		System.out.println("a.323 = " + wrmd.getMimeTypesFile(new File("a.323")));
-		// As a Relative URL
-		System.out.println("a.323 = " + wrmd.getMimeTypesURL(new URL("file:a.323")));
-
-		// The extension .xxx does not exist in the windows registry
-		System.out.println("a.xxx = " + wrmd.getMimeTypesFileName("a.xxx"));
-		System.out.println("a.xxx = " + wrmd.getMimeTypesFile(new File("a.xxx")));
-
-		// The extension .divx exists but does not have a valid MIME type (ICM.DIV6)
-		System.out.println("a.divx = " + wrmd.getMimeTypesFileName("a.divx"));
-		System.out.println("a.divx = " + wrmd.getMimeTypesFile(new File("a.divx")));
-	}
-
 }
